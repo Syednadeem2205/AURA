@@ -1,2349 +1,1981 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA - AI Inventory & Demand Forecasting</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        :root {
-            /* Modern Color Palette */
-            --primary-50: #eff6ff;
-            --primary-100: #dbeafe;
-            --primary-500: #3b82f6;
-            --primary-600: #2563eb;
-            --primary-700: #1d4ed8;
-            --primary-900: #1e3a8a;
-            
-            --secondary-500: #8b5cf6;
-            --secondary-600: #7c3aed;
-            
-            --accent-500: #06b6d4;
-            --accent-600: #0891b2;
-            
-            --success-500: #10b981;
-            --warning-500: #f59e0b;
-            --error-500: #ef4444;
-            
-            /* Neutral Colors */
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            --gray-900: #0f172a;
-            
-            /* Typography */
-            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-            --font-display: 'Space Grotesk', 'Inter', sans-serif;
-            
-            /* Spacing Scale */
-            --space-1: 0.25rem;
-            --space-2: 0.5rem;
-            --space-3: 0.75rem;
-            --space-4: 1rem;
-            --space-5: 1.25rem;
-            --space-6: 1.5rem;
-            --space-8: 2rem;
-            --space-10: 2.5rem;
-            --space-12: 3rem;
-            --space-16: 4rem;
-            --space-20: 5rem;
-            --space-24: 6rem;
-            
-            /* Border Radius */
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-            --radius-xl: 1rem;
-            --radius-2xl: 1.5rem;
-            --radius-full: 9999px;
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            
-            /* Transitions */
-            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-            
-            /* Glass Effect */
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --glass-blur: blur(20px);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-            scroll-padding-top: 5rem;
-        }
-
-        body {
-            font-family: var(--font-primary);
-            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
-            color: var(--gray-800);
-            overflow-x: hidden;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Real Background Images */
-        .image-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -3;
-            overflow: hidden;
-        }
-
-        .background-slideshow {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        .background-slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0;
-            transition: opacity 3s ease-in-out;
-        }
-
-        .background-slide.active {
-            opacity: 0.6;
-        }
-
-        .slide-1 {
-            background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2025&q=80');
-        }
-
-        .slide-2 {
-            background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80');
-        }
-
-        .slide-3 {
-            background-image: url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
-        }
-
-        .slide-4 {
-            background-image: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
-        }
-
-        .slide-5 {
-            background-image: url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2134&q=80');
-        }
-
-        .image-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            background: linear-gradient(135deg, 
-                rgba(59, 130, 246, 0.15) 0%, 
-                rgba(139, 92, 246, 0.1) 25%,
-                rgba(6, 182, 212, 0.15) 50%,
-                rgba(16, 185, 129, 0.1) 75%,
-                rgba(59, 130, 246, 0.15) 100%);
-            backdrop-filter: blur(2px);
-        }
-
-        /* Floating Tech Elements */
-        .floating-elements {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .tech-element {
-            position: absolute;
-            color: rgba(59, 130, 246, 0.3);
-            font-size: 1.5rem;
-            font-weight: bold;
-            animation: techFloat 20s infinite linear;
-            opacity: 0.7;
-        }
-
-        @keyframes techFloat {
-            0% {
-                transform: translateY(100vh) translateX(-50px) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.7;
-            }
-            90% {
-                opacity: 0.7;
-            }
-            100% {
-                transform: translateY(-100px) translateX(50px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        /* Modern Header */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: var(--space-4) 0;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: var(--glass-blur);
-            border-bottom: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-lg);
-            transition: all var(--transition-normal);
-            -webkit-backdrop-filter: var(--glass-blur);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 var(--space-8);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: var(--space-4);
-        }
-
-        .logo-icon {
-            width: 3.5rem;
-            height: 3.5rem;
-            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500), var(--accent-500));
-            border-radius: var(--radius-xl);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            font-weight: 800;
-            font-family: var(--font-mono);
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-            transition: all var(--transition-normal);
-        }
-
-        .logo-icon::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transform: rotate(45deg);
-            animation: logoShine 4s infinite;
-        }
-
-        .logo-icon:hover {
-            transform: scale(1.05) rotate(5deg);
-            box-shadow: var(--shadow-xl);
-        }
-
-        @keyframes logoShine {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-
-        .logo-text {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-600), var(--secondary-500));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.025em;
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: var(--space-2);
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-full);
-            padding: var(--space-2);
-        }
-
-        .nav-item {
-            position: relative;
-        }
-
-        .nav-link {
-            color: var(--gray-600);
-            text-decoration: none;
-            padding: var(--space-3) var(--space-5);
-            border-radius: var(--radius-full);
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: all var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-            border-radius: var(--radius-full);
-            opacity: 0;
-            transition: opacity var(--transition-normal);
-        }
-
-        .nav-link:hover::before {
-            opacity: 1;
-        }
-
-        .nav-link:hover {
-            color: var(--primary-600);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .nav-link i {
-            font-size: 0.875rem;
-            z-index: 1;
-        }
-
-        .nav-link span {
-            z-index: 1;
-        }
-
-        /* Mobile Menu Toggle */
-        .mobile-menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--gray-600);
-            cursor: pointer;
-            padding: var(--space-2);
-            border-radius: var(--radius-md);
-            transition: all var(--transition-normal);
-        }
-
-        .mobile-menu-toggle:hover {
-            background: var(--gray-100);
-            color: var(--primary-600);
-        }
-
-        /* Modern Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: var(--space-24) var(--space-8) var(--space-16);
-            position: relative;
-            background: linear-gradient(135deg, 
-                rgba(255, 255, 255, 0.95) 0%, 
-                rgba(248, 250, 252, 0.9) 50%,
-                rgba(239, 246, 255, 0.95) 100%);
-        }
-
-        .hero-content {
-            max-width: 1000px;
-            z-index: 2;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-3) var(--space-6);
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-full);
-            color: var(--primary-600);
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: var(--space-8);
-            animation: heroBadgeFloat 3s ease-in-out infinite;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            box-shadow: var(--shadow-md);
-        }
-
-        .hero-badge i {
-            font-size: 1rem;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes heroBadgeFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .hero-title {
-            font-family: var(--font-display);
-            font-size: clamp(2.5rem, 8vw, 6rem);
-            font-weight: 800;
-            margin-bottom: var(--space-8);
-            background: linear-gradient(135deg, 
-                var(--gray-900) 0%, 
-                var(--primary-600) 30%, 
-                var(--secondary-500) 70%,
-                var(--accent-500) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-            position: relative;
-        }
-
-        .hero-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
-            border-radius: var(--radius-full);
-            animation: titleUnderline 2s ease-out;
-        }
-
-        @keyframes titleUnderline {
-            from { width: 0; }
-            to { width: 100px; }
-        }
-
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: var(--gray-600);
-            margin-bottom: var(--space-12);
-            line-height: 1.7;
-            font-weight: 400;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: var(--space-4);
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: var(--space-16);
-        }
-
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-4) var(--space-8);
-            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
-            color: white;
-            text-decoration: none;
-            border-radius: var(--radius-full);
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-            border: none;
-            cursor: pointer;
-            box-shadow: var(--shadow-xl);
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
-            opacity: 0;
-            transition: opacity var(--transition-normal);
-        }
-
-        .btn-primary:hover::before {
-            opacity: 1;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-2xl);
-        }
-
-        .btn-secondary {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-4) var(--space-8);
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            color: var(--primary-600);
-            text-decoration: none;
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-full);
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all var(--transition-normal);
-        }
-
-        .btn-secondary:hover {
-            background: var(--primary-50);
-            border-color: var(--primary-200);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .hero-visual {
-            width: 100%;
-            max-width: 700px;
-            height: 400px;
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-2xl);
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.125rem;
-            color: var(--gray-500);
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-2xl);
-        }
-
-        .hero-visual::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(59, 130, 246, 0.1), 
-                transparent);
-            animation: heroScan 3s infinite;
-        }
-
-        @keyframes heroScan {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--space-8);
-            margin-top: var(--space-16);
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-stat {
-            text-align: center;
-            padding: var(--space-6);
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            transition: all var(--transition-normal);
-        }
-
-        .hero-stat:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .hero-stat-number {
-            font-family: var(--font-mono);
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-600);
-            display: block;
-            margin-bottom: var(--space-2);
-        }
-
-        .hero-stat-label {
-            font-size: 0.875rem;
-            color: var(--gray-600);
-            font-weight: 500;
-        }
-
-        /* Main Content */
-        .main-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 6rem 2rem;
-        }
-
-        /* Section Styling */
-        .section {
-            margin-bottom: 8rem;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .section-badge {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
-            border: 2px solid rgba(139, 92, 246, 0.2);
-            border-radius: 50px;
-            color: #8b5cf6;
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .section-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #1e293b, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-description {
-            font-size: 1.2rem;
-            color: #64748b;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.8;
-        }
-
-        /* Modern Dashboard Cards */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: var(--space-6);
-            margin-bottom: var(--space-16);
-        }
-
-        .metric-card {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-2xl);
-            padding: var(--space-8);
-            text-align: center;
-            transition: all var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-            group: hover;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary-500), var(--secondary-500), var(--accent-500));
-            opacity: 0;
-            transition: opacity var(--transition-normal);
-        }
-
-        .metric-card:hover::before {
-            opacity: 1;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: var(--shadow-2xl);
-            border-color: var(--primary-200);
-        }
-
-        .metric-icon {
-            width: 4rem;
-            height: 4rem;
-            background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
-            border-radius: var(--radius-xl);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            font-weight: 700;
-            margin: 0 auto var(--space-6);
-            position: relative;
-            box-shadow: var(--shadow-md);
-            transition: all var(--transition-normal);
-        }
-
-        .metric-card:hover .metric-icon {
-            transform: scale(1.1) rotate(5deg);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .metric-value {
-            font-family: var(--font-mono);
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary-600);
-            margin-bottom: var(--space-2);
-            animation: countUp 2s ease-out;
-            line-height: 1;
-        }
-
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .metric-label {
-            color: var(--gray-700);
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: var(--space-4);
-            line-height: 1.4;
-        }
-
-        .metric-trend {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-4);
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1));
-            border-radius: var(--radius-full);
-            color: var(--success-500);
-            font-size: 0.875rem;
-            font-weight: 600;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .metric-trend i {
-            font-size: 0.75rem;
-        }
-
-        /* Charts */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 2rem;
-        }
-
-        .chart-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 25px;
-            padding: 2.5rem;
-            transition: all 0.4s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .chart-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 50px rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.3);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .chart-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .chart-container {
-            height: 350px;
-            position: relative;
-        }
-
-        .live-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #64748b;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .live-dot {
-            width: 10px;
-            height: 10px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: livePulse 2s ease-in-out infinite;
-        }
-
-        @keyframes livePulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.3); }
-        }
-
-        /* Tech Stack */
-        .tech-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
-        }
-
-        .tech-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 20px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .tech-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(6, 182, 212, 0.3);
-            box-shadow: 0 20px 40px rgba(6, 182, 212, 0.1);
-        }
-
-        .tech-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #06b6d4, #8b5cf6);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-            font-weight: 900;
-            margin: 0 auto 1rem;
-        }
-
-        .tech-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .tech-description {
-            color: #64748b;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        /* ML Pipeline */
-        .pipeline-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        /* Team Section */
-        .team-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 3rem;
-            margin: 4rem 0;
-        }
-
-        .team-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 25px;
-            padding: 2.5rem;
-            text-align: center;
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-        }
-
-        .team-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .team-card:hover::before {
-            opacity: 1;
-        }
-
-        .team-card:hover {
-            transform: translateY(-15px) scale(1.02);
-            box-shadow: 0 35px 70px rgba(59, 130, 246, 0.15);
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-
-        .team-photo-placeholder {
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            border: 3px solid rgba(59, 130, 246, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .team-card:hover .team-photo-placeholder {
-            border-color: #3b82f6;
-            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.2);
-        }
-
-        .photo-icon {
-            font-size: 4rem;
-            color: #94a3b8;
-            transition: all 0.3s ease;
-        }
-
-        .team-card:hover .photo-icon {
-            color: #3b82f6;
-            transform: scale(1.1);
-        }
-
-        .team-name {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #1e293b, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .team-role {
-            color: #3b82f6;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .team-skills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .skill-tag {
-            padding: 0.4rem 1rem;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 20px;
-            color: #3b82f6;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .skill-tag:hover {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .team-description {
-            color: #64748b;
-            line-height: 1.7;
-            font-size: 0.95rem;
-        }
-
-        /* Achievements Section */
-        .achievements-section {
-            margin-top: 5rem;
-            text-align: center;
-        }
-
-        .achievements-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 3rem;
-            background: linear-gradient(135deg, #1e293b, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .achievements-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .achievement-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 20px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .achievement-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(16, 185, 129, 0.3);
-            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
-        }
-
-        .achievement-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .achievement-text {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .pipeline-step {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 20px;
-            padding: 2.5rem;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .pipeline-step::after {
-            content: '→';
-            position: absolute;
-            right: -1.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 2rem;
-            color: #3b82f6;
-            font-weight: bold;
-        }
-
-        .pipeline-step:last-child::after {
-            display: none;
-        }
-
-        .pipeline-step:hover {
-            transform: scale(1.05);
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.1);
-        }
-
-        .step-number {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: #fff;
-            margin: 0 auto 1.5rem;
-        }
-
-        .step-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: #1e293b;
-        }
-
-        .step-description {
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        /* AI Chat Widget */
-        .chat-widget {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        .chat-button {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border: none;
-            border-radius: 50%;
-            color: #fff;
-            font-size: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.3);
-            animation: chatFloat 3s ease-in-out infinite;
-            font-weight: 900;
-        }
-
-        @keyframes chatFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .chat-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 20px 50px rgba(59, 130, 246, 0.4);
-        }
-
-        .chat-panel {
-            position: absolute;
-            bottom: 90px;
-            right: 0;
-            width: 380px;
-            height: 550px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 25px;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-header {
-            padding: 2rem;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-        }
-
-        .chat-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #3b82f6;
-            margin-bottom: 0.5rem;
-        }
-
-        .chat-subtitle {
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .chat-input-container {
-            padding: 1.5rem;
-            border-top: 1px solid rgba(148, 163, 184, 0.2);
-        }
-
-        .chat-input {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            border-radius: 25px;
-            color: #1e293b;
-            outline: none;
-            font-size: 0.9rem;
-        }
-
-        .chat-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
-        }
-
-        /* Footer */
-        .footer {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(148, 163, 184, 0.2);
-            padding: 4rem 2rem 2rem;
-            text-align: center;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            margin-bottom: 3rem;
-            flex-wrap: wrap;
-        }
-
-        .footer-link {
-            color: #64748b;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        .footer-link:hover {
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .footer-text {
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-
-        /* Modern Responsive Design */
-        @media (max-width: 1024px) {
-            .nav-container {
-                padding: 0 var(--space-6);
-            }
-            
-            .hero {
-                padding: var(--space-20) var(--space-6) var(--space-12);
-            }
-            
-            .main-content {
-                padding: var(--space-16) var(--space-6);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: var(--glass-bg);
-                backdrop-filter: var(--glass-blur);
-                border: 1px solid var(--glass-border);
-                border-radius: var(--radius-xl);
-                margin: var(--space-4);
-                padding: var(--space-4);
-                flex-direction: column;
-                gap: var(--space-2);
-                box-shadow: var(--shadow-xl);
-            }
-            
-            .nav-menu.active {
-                display: flex;
-            }
-            
-            .mobile-menu-toggle {
-                display: block;
-            }
-            
-            .logo-text {
-                font-size: 1.5rem;
-            }
-            
-            .hero {
-                padding: var(--space-16) var(--space-4) var(--space-8);
-            }
-            
-            .hero-title {
-                font-size: clamp(2rem, 8vw, 3.5rem);
-            }
-            
-            .hero-subtitle {
-                font-size: 1.125rem;
-            }
-            
-            .hero-buttons {
-                flex-direction: column;
-                align-items: stretch;
-                gap: var(--space-3);
-            }
-            
-            .hero-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--space-4);
-            }
-            
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-4);
-            }
-            
-            .charts-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-4);
-            }
-            
-            .tech-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-4);
-            }
-            
-            .pipeline-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-4);
-            }
-            
-            .pipeline-step::after {
-                content: '↓';
-                right: 50%;
-                top: 100%;
-                transform: translateX(50%);
-                bottom: -2rem;
-            }
-            
-            .team-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-6);
-            }
-            
-            .achievements-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--space-4);
-            }
-            
-            .chat-panel {
-                width: calc(100vw - 2rem);
-                height: 70vh;
-                right: 1rem;
-                bottom: 5rem;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-            
-            .main-content {
-                padding: var(--space-12) var(--space-4);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .hero-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .achievements-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-container {
-                padding: 0 var(--space-4);
-            }
-            
-            .logo-icon {
-                width: 3rem;
-                height: 3rem;
-                font-size: 1.25rem;
-            }
-            
-            .logo-text {
-                font-size: 1.25rem;
-            }
-        }
-
-        /* Loading Animation */
-        .loading {
-            display: inline-block;
-            width: 25px;
-            height: 25px;
-            border: 3px solid rgba(59, 130, 246, 0.3);
-            border-radius: 50%;
-            border-top-color: #3b82f6;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Scroll animations */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.6s ease;
-        }
-
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <!-- Real Background Images -->
-    <div class="image-background">
-        <div class="background-slideshow">
-            <div class="background-slide slide-1 active"></div>
-            <div class="background-slide slide-2"></div>
-            <div class="background-slide slide-3"></div>
-            <div class="background-slide slide-4"></div>
-            <div class="background-slide slide-5"></div>
-        </div>
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA - Autonomous Unified Resilient Analytics</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .app-container {
+      height: 100%;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% 200%;
+      animation: gradientFlow 4s ease infinite;
+    }
+
+    @keyframes gradientFlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Glowing effect */
+    .glow {
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                   0 0 40px rgba(255, 255, 255, 0.3),
+                   0 0 60px rgba(255, 255, 255, 0.2);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+
+    /* Background Images */
+    .bg-home {
+      background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .bg-approach {
+      background: url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .bg-team {
+      background: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .bg-future {
+      background: url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    .bg-predict {
+      background: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    /* AURA Title Animation */
+    .aura-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 8rem;
+      font-weight: 900;
+      letter-spacing: 0.3em;
+      background: linear-gradient(45deg, #ffffff, #a8edea, #fed6e3, #667eea, #f093fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 300% 300%;
+      animation: titleGradient 5s ease infinite, slideInScale 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      text-shadow: 0 0 100px rgba(255, 255, 255, 0.8);
+      position: relative;
+      filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.6));
+    }
+
+    @keyframes titleGradient {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes slideInScale {
+      0% {
+        transform: translateX(-100%) scale(0.5) rotateY(-90deg);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0) scale(1) rotateY(0deg);
+        opacity: 1;
+      }
+    }
+
+    /* Tagline Animation */
+    .aura-tagline {
+      font-family: 'Space Grotesk', sans-serif;
+      animation: fadeInUp 2s ease-out 0.5s both;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .aura-tagline span {
+      display: inline-block;
+      animation: letterPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) both, wordGlow 3s ease-in-out infinite;
+      position: relative;
+      background: linear-gradient(135deg, #a8edea, #fed6e3, #667eea, #f093fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% 200%;
+      filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6)) 
+              drop-shadow(0 0 25px rgba(240, 147, 251, 0.4));
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+    }
+
+    .aura-tagline span:nth-child(1) { 
+      animation-delay: 0.8s, 0s; 
+    }
+    .aura-tagline span:nth-child(2) { 
+      animation-delay: 1s, 0.5s; 
+    }
+    .aura-tagline span:nth-child(3) { 
+      animation-delay: 1.2s, 1s; 
+    }
+    .aura-tagline span:nth-child(4) { 
+      animation-delay: 1.4s, 1.5s; 
+    }
+
+    @keyframes wordGlow {
+      0%, 100% { 
+        filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.4)) 
+                drop-shadow(0 0 20px rgba(240, 147, 251, 0.3));
+        transform: translateY(0);
+      }
+      50% { 
+        filter: drop-shadow(0 0 25px rgba(102, 126, 234, 0.9)) 
+                drop-shadow(0 0 40px rgba(240, 147, 251, 0.7))
+                drop-shadow(0 0 60px rgba(168, 237, 234, 0.5));
+        transform: translateY(-3px);
+      }
+    }
+
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes letterPop {
+      0% {
+        transform: scale(0.5) translateY(30px) rotateX(-90deg);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2) translateY(-10px) rotateX(0deg);
+      }
+      100% {
+        transform: scale(1) translateY(0) rotateX(0deg);
+        opacity: 1;
+      }
+    }
+
+    /* 3D Card Effects */
+    .card-3d {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 25px;
+      padding: 2.5rem;
+      transform-style: preserve-3d;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-3d::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      transform: rotate(45deg);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .card-3d:hover {
+      transform: translateY(-15px) rotateX(5deg) scale(1.02);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9),
+                  0 0 50px rgba(102, 126, 234, 0.5),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.6);
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    /* Navigation */
+    .nav-link {
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .nav-link:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-link.active {
+      background: rgba(102, 126, 234, 0.85);
+      border-color: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    /* Team Cards */
+    .team-card {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(15px);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.4s ease;
+      transform-style: preserve-3d;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .team-card:hover {
+      transform: translateY(-15px) rotateY(5deg);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      border-color: rgba(255, 255, 255, 0.7);
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    /* Algorithm Badges */
+    .algo-badge {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      margin: 0.5rem;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      backdrop-filter: blur(10px);
+      border-radius: 30px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .algo-badge::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .algo-badge:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .algo-badge:hover {
+      transform: scale(1.15) translateY(-5px);
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Feature boxes */
+    .feature-box {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(15px);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      animation: fadeInScale 0.6s ease both;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .feature-box:nth-child(1) { animation-delay: 0.1s; }
+    .feature-box:nth-child(2) { animation-delay: 0.2s; }
+    .feature-box:nth-child(3) { animation-delay: 0.3s; }
+    .feature-box:nth-child(4) { animation-delay: 0.4s; }
+    .feature-box:nth-child(5) { animation-delay: 0.5s; }
+    .feature-box:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .feature-box:hover {
+      transform: translateY(-10px);
+      background: rgba(0, 0, 0, 0.9);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Form Elements */
+    .form-input {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: rgba(102, 126, 234, 0.9);
+      background: rgba(0, 0, 0, 0.9);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+    }
+
+    .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-primary {
+      padding: 1rem 2.5rem;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 15px;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
+      border-color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* File Upload */
+    .file-upload {
+      border: 3px dashed rgba(255, 255, 255, 0.6);
+      border-radius: 15px;
+      padding: 3rem;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .file-upload:hover {
+      border-color: rgba(102, 126, 234, 0.9);
+      background: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Floating Animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    /* Hidden class */
+    .hidden {
+      display: none;
+    }
+
+    /* Page transitions */
+    .page {
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Scrollbar styling */
+    .app-container::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .app-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .app-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+    }
+
+    .app-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 1);
+    }
+
+    /* Prediction Method Buttons */
+    .prediction-method-btn {
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 20px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .prediction-method-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .prediction-method-btn.active-method {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85));
+      border-color: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.6);
+    }
+
+    /* Processing Spinner */
+    .processing-spinner {
+      width: 80px;
+      height: 80px;
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top: 6px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Algorithm Status */
+    .algo-status {
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 15px;
+      color: white;
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .algo-status.processing {
+      background: rgba(255, 200, 0, 0.3);
+      border: 2px solid rgba(255, 200, 0, 0.7);
+      box-shadow: 0 0 20px rgba(255, 200, 0, 0.3);
+    }
+
+    .algo-status.complete {
+      background: rgba(0, 255, 100, 0.3);
+      border: 2px solid rgba(0, 255, 100, 0.7);
+      box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
+    }
+
+    /* Prediction Section */
+    .prediction-section {
+      animation: fadeIn 0.5s ease;
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    select.form-input {
+      cursor: pointer;
+    }
+
+    /* Result Cards */
+    .result-card {
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      margin-bottom: 1rem;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .metric-box {
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .metric-box:hover {
+      transform: translateY(-3px);
+      background: rgba(0, 0, 0, 0.9);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div class="app-container"><!-- Navigation -->
+   <nav class="fixed top-0 left-0 right-0 z-50 p-6">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+     <div class="text-2xl font-bold text-white" style="font-family: 'Orbitron', sans-serif; text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7);">
+      AURA
+     </div>
+     <div class="flex gap-4"><a href="#" class="nav-link active" data-page="home">Overview</a> <a href="#" class="nav-link" data-page="approach">Intelligence Core</a> <a href="#" class="nav-link" data-page="predict">Forecast Lab</a> <a href="#" class="nav-link" data-page="future">Vision &amp; Roadmap</a> <a href="#" class="nav-link" data-page="team">Architects</a>
+     </div>
     </div>
-    <div class="image-overlay"></div>
-    <div class="floating-elements" id="techElements"></div>
-
-    <!-- Header -->
-    <header class="header">
-        <div class="nav-container">
-            <div class="logo">
-                <div class="logo-icon">AI</div>
-                <div class="logo-text">AURA</div>
-            </div>
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="#dashboard" class="nav-link">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#analytics" class="nav-link">
-                            <i class="fas fa-brain"></i>
-                            <span>Analytics</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#team" class="nav-link">
-                            <i class="fas fa-users"></i>
-                            <span>Team</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#assistant" class="nav-link">
-                            <i class="fas fa-robot"></i>
-                            <span>AI Assistant</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#contact" class="nav-link">
-                            <i class="fas fa-envelope"></i>
-                            <span>Contact</span>
-                        </a>
-                    </li>
-                </ul>
-                <button class="mobile-menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </nav>
+   </nav><!-- Home Page -->
+   <div id="page-home" class="page min-h-full bg-home flex items-center justify-center px-6 py-20">
+    <div class="max-w-6xl w-full text-center">
+     <h1 class="aura-title mb-6 glow">AURA</h1>
+     <p class="text-4xl text-white aura-tagline mb-12"><span>Autonomous</span> <span>Unified</span> <span>Resilient</span> <span>Analytics</span></p>
+     <div class="card-3d max-w-4xl mx-auto mb-16 float-animation">
+      <h2 class="text-5xl font-bold mb-6" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 4px 12px rgba(0, 0, 0, 1), 0 2px 6px rgba(0, 0, 0, 1);">Welcome to the Future of Forecasting</h2>
+      <p class="text-xl leading-relaxed mb-8" style="font-family: 'Inter', sans-serif; line-height: 1.8; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1), 0 1px 4px rgba(0, 0, 0, 1);">Revolutionizing demand forecasting and inventory optimization through the power of ensemble machine learning. Our AURA platform combines cutting-edge algorithms to deliver unparalleled accuracy and insights, transforming raw data into strategic business intelligence.</p>
+      <div class="grid md:grid-cols-3 gap-6 text-left">
+       <div class="feature-box">
+        <div class="feature-icon">
+         🎯
         </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-badge">
-                <i class="fas fa-graduation-cap"></i>
-                Final Year Engineering Project
-            </div>
-            <h1 class="hero-title">REVOLUTIONIZE<br>INVENTORY<br>INTELLIGENCE</h1>
-            <p class="hero-subtitle">
-                A cutting-edge final year project by engineering students, leveraging advanced AI and machine learning 
-                to transform inventory management with unprecedented demand prediction accuracy and automated optimization.
-            </p>
-            <div class="hero-buttons">
-                <a href="#dashboard" class="btn-primary">
-                    <i class="fas fa-rocket"></i>
-                    Explore Dashboard
-                </a>
-                <a href="#analytics" class="btn-secondary">
-                    <i class="fas fa-chart-bar"></i>
-                    View Predictions
-                </a>
-            </div>
-            <div class="hero-visual">
-                <div>
-                    <i class="fas fa-cogs" style="font-size: 3rem; color: var(--primary-400); margin-bottom: 1rem;"></i>
-                    <div>Advanced AI Visualization Engine</div>
-                </div>
-            </div>
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <span class="hero-stat-number">97%</span>
-                    <span class="hero-stat-label">Prediction Accuracy</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number">24/7</span>
-                    <span class="hero-stat-label">Real-time Monitoring</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number">50+</span>
-                    <span class="hero-stat-label">ML Models Deployed</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number">∞</span>
-                    <span class="hero-stat-label">Scalable Architecture</span>
-                </div>
-            </div>
+        <h3 class="text-xl font-bold mb-2" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">95%+ Accuracy</h3>
+        <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Industry-leading prediction accuracy powered by ensemble learning</p>
+       </div>
+       <div class="feature-box">
+        <div class="feature-icon">
+         ⚡
         </div>
-    </section>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Dashboard Section -->
-        <section id="dashboard" class="section fade-in">
-            <div class="section-header">
-                <div class="section-badge">Real-Time Intelligence</div>
-                <h2 class="section-title">LIVE DASHBOARD</h2>
-                <p class="section-description">
-                    Monitor your inventory performance with real-time analytics, predictive insights, 
-                    and intelligent alerts powered by advanced machine learning algorithms.
-                </p>
-            </div>
-            
-            <!-- KPI Metrics -->
-            <div class="dashboard-grid">
-                <div class="metric-card fade-in">
-                    <div class="metric-icon">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                    <div class="metric-value" data-target="24567">0</div>
-                    <div class="metric-label">Total Stock Units</div>
-                    <div class="metric-trend">
-                        <i class="fas fa-arrow-up"></i>
-                        +18.5% growth
-                    </div>
-                </div>
-                
-                <div class="metric-card fade-in">
-                    <div class="metric-icon">
-                        <i class="fas fa-bullseye"></i>
-                    </div>
-                    <div class="metric-value" data-target="34892">0</div>
-                    <div class="metric-label">Predicted Demand</div>
-                    <div class="metric-trend">
-                        <i class="fas fa-chart-line"></i>
-                        +12.3% forecast
-                    </div>
-                </div>
-                
-                <div class="metric-card fade-in">
-                    <div class="metric-icon">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <div class="metric-value" data-target="97">0</div>
-                    <div class="metric-label">AI Accuracy %</div>
-                    <div class="metric-trend">
-                        <i class="fas fa-arrow-up"></i>
-                        +2.1% improved
-                    </div>
-                </div>
-                
-                <div class="metric-card fade-in">
-                    <div class="metric-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="metric-value" data-target="5">0</div>
-                    <div class="metric-label">Critical Alerts</div>
-                    <div class="metric-trend">
-                        <i class="fas fa-arrow-down"></i>
-                        -40% reduced
-                    </div>
-                </div>
-            </div>
-
-            <!-- Interactive Charts -->
-            <div class="charts-grid">
-                <div class="chart-card fade-in">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Demand Forecasting</h3>
-                        <div class="live-indicator">
-                            <div class="live-dot"></div>
-                            <span>Live AI Predictions</span>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="demandChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card fade-in">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Inventory Optimization</h3>
-                        <div class="live-indicator">
-                            <div class="live-dot"></div>
-                            <span>Real-Time Updates</span>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="inventoryChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card fade-in">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Category Intelligence</h3>
-                        <div class="live-indicator">
-                            <div class="live-dot"></div>
-                            <span>Smart Analytics</span>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card fade-in">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Model Performance</h3>
-                        <div class="live-indicator">
-                            <div class="live-dot"></div>
-                            <span>AI Monitoring</span>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="performanceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Analytics Section -->
-        <section id="analytics" class="section fade-in">
-            <div class="section-header">
-                <div class="section-badge">Machine Learning</div>
-                <h2 class="section-title">PREDICTIVE ANALYTICS</h2>
-                <p class="section-description">
-                    Advanced AI models powered by cutting-edge technology stack for precise demand forecasting, 
-                    intelligent inventory optimization, and automated decision-making.
-                </p>
-            </div>
-
-            <!-- MLOps Workflow -->
-            <div class="tech-grid">
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">MON</div>
-                    <div class="tech-name">Model Monitoring</div>
-                    <div class="tech-description">Real-time performance tracking with automated drift detection and alert systems</div>
-                </div>
-                
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">AUT</div>
-                    <div class="tech-name">Auto Retraining</div>
-                    <div class="tech-description">Intelligent model updates triggered by performance thresholds and data patterns</div>
-                </div>
-                
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">A/B</div>
-                    <div class="tech-name">A/B Testing</div>
-                    <div class="tech-description">Continuous model comparison and champion-challenger deployment strategies</div>
-                </div>
-                
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">SCL</div>
-                    <div class="tech-name">Auto Scaling</div>
-                    <div class="tech-description">Dynamic resource allocation based on demand with cost optimization</div>
-                </div>
-                
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">LOG</div>
-                    <div class="tech-name">Audit Logging</div>
-                    <div class="tech-description">Complete prediction lineage and model decision transparency</div>
-                </div>
-                
-                <div class="tech-card fade-in">
-                    <div class="tech-icon">API</div>
-                    <div class="tech-name">API Gateway</div>
-                    <div class="tech-description">Secure, rate-limited access to AI predictions with comprehensive analytics</div>
-                </div>
-            </div>
-
-            <!-- ML Pipeline -->
-            <div class="pipeline-grid">
-                <div class="pipeline-step fade-in">
-                    <div class="step-number">1</div>
-                    <div class="step-title">Data Ingestion</div>
-                    <div class="step-description">Automated collection and validation of inventory data from multiple sources with real-time processing capabilities</div>
-                </div>
-
-                <div class="pipeline-step fade-in">
-                    <div class="step-number">2</div>
-                    <div class="step-title">Feature Engineering</div>
-                    <div class="step-description">Advanced data transformation and feature extraction using sophisticated statistical and ML algorithms</div>
-                </div>
-
-                <div class="pipeline-step fade-in">
-                    <div class="step-number">3</div>
-                    <div class="step-title">Model Training</div>
-                    <div class="step-description">Deploy multiple ML algorithms with hyperparameter optimization and comprehensive cross-validation</div>
-                </div>
-
-                <div class="pipeline-step fade-in">
-                    <div class="step-number">4</div>
-                    <div class="step-title">Prediction Engine</div>
-                    <div class="step-description">Generate accurate forecasts with confidence intervals and comprehensive uncertainty quantification</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Team Section -->
-        <section id="team" class="section fade-in">
-            <div class="section-header">
-                <div class="section-badge">Final Year Project Team</div>
-                <h2 class="section-title">MEET THE INNOVATORS</h2>
-                <p class="section-description">
-                    A passionate team of final year engineering students dedicated to revolutionizing 
-                    inventory management through cutting-edge AI and machine learning technologies.
-                </p>
-            </div>
-
-            <div class="team-grid">
-                <div class="team-card fade-in">
-                    <div class="team-photo-placeholder">
-                        <div class="photo-icon">👤</div>
-                    </div>
-                    <div class="team-info">
-                        <h3 class="team-name">SYED NADEEM AHMED</h3>
-                        <div class="team-role">AI/ML Engineer & Team Lead</div>
-                        <div class="team-skills">
-                            <span class="skill-tag">Machine Learning</span>
-                            <span class="skill-tag">Deep Learning</span>
-                            <span class="skill-tag">Python</span>
-                        </div>
-                        <p class="team-description">
-                            Specializes in developing advanced ML algorithms for demand forecasting 
-                            and inventory optimization with expertise in neural networks and time series analysis.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="team-card fade-in">
-                    <div class="team-photo-placeholder">
-                        <div class="photo-icon">👤</div>
-                    </div>
-                    <div class="team-info">
-                        <h3 class="team-name">SIDDHARTH</h3>
-                        <div class="team-role">Full Stack Developer</div>
-                        <div class="team-skills">
-                            <span class="skill-tag">React</span>
-                            <span class="skill-tag">Node.js</span>
-                            <span class="skill-tag">Database Design</span>
-                        </div>
-                        <p class="team-description">
-                            Focuses on creating intuitive user interfaces and robust backend systems 
-                            that seamlessly integrate with AI models for real-time inventory management.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="team-card fade-in">
-                    <div class="team-photo-placeholder">
-                        <div class="photo-icon">👤</div>
-                    </div>
-                    <div class="team-info">
-                        <h3 class="team-name">KARTHIK</h3>
-                        <div class="team-role">Data Scientist & Analytics</div>
-                        <div class="team-skills">
-                            <span class="skill-tag">Data Analysis</span>
-                            <span class="skill-tag">Statistics</span>
-                            <span class="skill-tag">Visualization</span>
-                        </div>
-                        <p class="team-description">
-                            Expert in data preprocessing, statistical modeling, and creating insightful 
-                            visualizations that drive intelligent business decisions and predictive analytics.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Project Achievements -->
-            <div class="achievements-section">
-                <h3 class="achievements-title">🏆 PROJECT ACHIEVEMENTS</h3>
-                <div class="achievements-grid">
-                    <div class="achievement-card fade-in">
-                        <div class="achievement-icon">🎯</div>
-                        <div class="achievement-text">97% Prediction Accuracy</div>
-                    </div>
-                    <div class="achievement-card fade-in">
-                        <div class="achievement-icon">⚡</div>
-                        <div class="achievement-text">Real-time Processing</div>
-                    </div>
-                    <div class="achievement-card fade-in">
-                        <div class="achievement-icon">🚀</div>
-                        <div class="achievement-text">Scalable Architecture</div>
-                    </div>
-                    <div class="achievement-card fade-in">
-                        <div class="achievement-icon">💡</div>
-                        <div class="achievement-text">Innovation Award Nominee</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- AI Assistant Chat Widget -->
-    <div class="chat-widget">
-        <button class="chat-button" onclick="toggleChat()">AI</button>
-        <div class="chat-panel" id="chatPanel">
-            <div class="chat-header">
-                <div class="chat-title">AURA AI Assistant</div>
-                <div class="chat-subtitle">Your intelligent inventory advisor</div>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <div style="color: #64748b; text-align: center; margin-top: 3rem; line-height: 1.8;">
-                    <strong style="color: #3b82f6;">Hello! I'm AURA AI</strong><br><br>
-                    I can help you with:<br>
-                    • Demand forecasting insights<br>
-                    • Inventory optimization tips<br>
-                    • Trend analysis and patterns<br>
-                    • Real-time recommendations<br><br>
-                    <em>Ask me anything about your inventory!</em>
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" class="chat-input" placeholder="Ask AURA anything..." onkeypress="handleChatInput(event)">
-            </div>
+        <h3 class="text-xl font-bold mb-2" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">Real-Time Analysis</h3>
+        <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Instant insights from complex datasets in seconds</p>
+       </div>
+       <div class="feature-box">
+        <div class="feature-icon">
+         🔒
         </div>
+        <h3 class="text-xl font-bold mb-2" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">Enterprise Ready</h3>
+        <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Scalable architecture built for mission-critical operations</p>
+       </div>
+      </div>
+     </div>
+     <div class="mb-12">
+      <h3 class="text-3xl font-bold mb-8" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 4px 10px rgba(0, 0, 0, 1), 0 2px 5px rgba(0, 0, 0, 1);">Powered by Four Advanced Algorithms</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+       <div class="algo-badge text-white"><span style="position: relative; z-index: 1;">📊 ARIMA</span>
+       </div>
+       <div class="algo-badge text-white"><span style="position: relative; z-index: 1;">🔮 Prophet</span>
+       </div>
+       <div class="algo-badge text-white"><span style="position: relative; z-index: 1;">⚡ XGBoost</span>
+       </div>
+       <div class="algo-badge text-white"><span style="position: relative; z-index: 1;">🧠 LSTM</span>
+       </div>
+      </div>
+     </div>
+     <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
+      <div class="feature-box text-left">
+       <div class="feature-icon">
+        💼
+       </div>
+       <h3 class="text-2xl font-bold mb-3" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">For Businesses</h3>
+       <p style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Optimize inventory, reduce costs, and maximize profitability with data-driven demand forecasting</p>
+      </div>
+      <div class="feature-box text-left">
+       <div class="feature-icon">
+        📊
+       </div>
+       <h3 class="text-2xl font-bold mb-3" style="font-family: 'Space Grotesk', sans-serif; color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">For Analysts</h3>
+       <p style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Leverage sophisticated ensemble models without complex coding or infrastructure management</p>
+      </div>
+     </div><!-- Why AURA Matters Section -->
+     <div class="max-w-6xl mx-auto"><!-- Global Crisis Context -->
+      <div class="card-3d mb-12">
+       <h2 class="text-5xl font-bold mb-6 text-center" style="font-family: 'Orbitron', sans-serif; color: #ffffff; text-shadow: 0 4px 12px rgba(0, 0, 0, 1), 0 2px 6px rgba(0, 0, 0, 1);">🌍 The Global Supply Chain Crisis</h2>
+       <h3 class="text-3xl font-bold mb-6 text-center gradient-text" style="font-family: 'Space Grotesk', sans-serif;">Why AURA Exists: The $8 Trillion Problem</h3>
+       <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <div class="p-6 bg-gradient-to-br from-red-600 to-orange-600 bg-opacity-30 rounded-2xl border-2 border-red-400 border-opacity-50">
+         <div class="text-5xl mb-4 text-center">
+          ⚠️
+         </div>
+         <h4 class="text-2xl font-bold mb-4 text-center" style="color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">The Crisis by Numbers</h4>
+         <ul class="space-y-3 text-lg">
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">💰</span> <span style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);"><strong>$1.1 trillion</strong> lost annually to supply chain inefficiencies globally (McKinsey, 2023)</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">📦</span> <span style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);"><strong>43%</strong> of companies experienced supply chain disruptions in 2023 (Gartner)</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">⏱️</span> <span style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);"><strong>70%</strong> of retail stockouts are due to poor demand forecasting (IHL Group)</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">📉</span> <span style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);"><strong>$1.75 trillion</strong> worth of excess inventory sits idle in warehouses worldwide (Statista)</span></li>
+         </ul>
+        </div>
+        <div class="p-6 bg-gradient-to-br from-blue-600 to-purple-600 bg-opacity-30 rounded-2xl border-2 border-blue-400 border-opacity-50">
+         <div class="text-5xl mb-4 text-center">
+          🎯
+         </div>
+         <h4 class="text-2xl font-bold mb-4 text-center" style="color: #ffffff; text-shadow: 0 3px 8px rgba(0, 0, 0, 1);">Real-World Impact</h4>
+         <div class="space-y-4">
+          <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+           <p class="font-bold mb-2" style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">🏪 Retail Crisis</p>
+           <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Empty shelves cost retailers <strong>$634B annually</strong> in lost sales. One major US retailer lost $3B in 2022 due to inventory mismatches.</p>
+          </div>
+          <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+           <p class="font-bold mb-2" style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">🏭 Manufacturing Delays</p>
+           <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">Automotive industry lost <strong>11.3M vehicles</strong> in production (2021-2023) due to parts shortage and demand forecasting failures.</p>
+          </div>
+          <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+           <p class="font-bold mb-2" style="color: #ffffff; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);">🌐 E-Commerce Challenges</p>
+           <p class="text-sm" style="color: #f0f0f0; text-shadow: 0 2px 6px rgba(0, 0, 0, 1);"><strong>69%</strong> of online shoppers won't return to a retailer after a stockout experience (Adobe, 2023).</p>
+          </div>
+         </div>
+        </div>
+       </div>
+       <div class="p-8 bg-gradient-to-r from-yellow-500 to-red-500 bg-opacity-20 rounded-2xl border-2 border-yellow-400 border-opacity-50 mb-8">
+        <h4 class="text-2xl font-bold text-white mb-4 text-center">🔥 Recent Headlines Driving the Need</h4>
+        <div class="grid md:grid-cols-2 gap-4">
+         <div class="p-4 bg-black bg-opacity-30 rounded-lg">
+          <p class="text-yellow-300 font-bold text-sm mb-2">📰 WSJ, March 2024</p>
+          <p class="text-white">"Major retailers face <strong>$50B inventory glut</strong> after holiday season demand miscalculation"</p>
+         </div>
+         <div class="p-4 bg-black bg-opacity-30 rounded-lg">
+          <p class="text-yellow-300 font-bold text-sm mb-2">📰 Reuters, February 2024</p>
+          <p class="text-white">"Supply chain disruptions cost global economy <strong>$4 trillion</strong> in 2023, AI adoption lagging"</p>
+         </div>
+         <div class="p-4 bg-black bg-opacity-30 rounded-lg">
+          <p class="text-yellow-300 font-bold text-sm mb-2">📰 Bloomberg, January 2024</p>
+          <p class="text-white">"Pharmaceutical industry faces <strong>critical shortages</strong> due to demand forecasting failures"</p>
+         </div>
+         <div class="p-4 bg-black bg-opacity-30 rounded-lg">
+          <p class="text-yellow-300 font-bold text-sm mb-2">📰 Financial Times, December 2023</p>
+          <p class="text-white">"Manufacturing sector loses <strong>$800B annually</strong> to inventory optimization failures"</p>
+         </div>
+        </div>
+       </div>
+       <div class="p-8 bg-gradient-to-br from-green-600 via-blue-600 to-purple-600 bg-opacity-30 rounded-2xl border-4 border-white border-opacity-60">
+        <div class="text-center mb-6">
+         <div class="text-6xl mb-4">
+          🚀
+         </div>
+         <h4 class="text-3xl font-bold text-white mb-4">AURA's Mission: Transform the $8T Problem into Competitive Advantage</h4>
+        </div>
+        <p class="text-xl text-white text-center leading-relaxed mb-4">The intersection of <strong class="text-cyan-300">volatile demand</strong>, <strong class="text-purple-300">expensive inventory</strong>, and <strong class="text-green-300">delayed decisions</strong> creates an $8 trillion annual drag on the global economy.</p>
+        <p class="text-2xl text-white text-center font-bold">AURA eliminates this friction by unifying forecasting with action.</p>
+       </div>
+      </div>
+      <div class="card-3d mb-12">
+       <h2 class="text-5xl font-bold text-white mb-6 text-center" style="font-family: 'Orbitron', sans-serif;">Why AURA Matters</h2>
+       <h3 class="text-3xl font-bold text-white mb-6 text-center gradient-text" style="font-family: 'Space Grotesk', sans-serif;">Turning Uncertainty into Advantage</h3>
+       <p class="text-xl text-white leading-relaxed text-center max-w-4xl mx-auto mb-8">Modern industries don't fail because of lack of data—they fail because demand is volatile, inventory is expensive, and decisions are delayed. AURA addresses this gap by combining demand forecasting and inventory optimization into a single, intelligent decision system.</p>
+      </div><!-- Sample Forecast Table -->
+      <div class="card-3d mb-12">
+       <h3 class="text-3xl font-bold text-white mb-3" style="font-family: 'Space Grotesk', sans-serif;">📊 Sample Demand Forecast <span class="text-lg opacity-75">(Illustrative)</span></h3>
+       <div class="mb-6 p-4 bg-white bg-opacity-5 rounded-lg">
+        <p class="text-white mb-1"><strong>Product:</strong> Fast-moving retail item</p>
+        <p class="text-white"><strong>Forecast Horizon:</strong> 30 days</p>
+       </div>
+       <div class="overflow-x-auto mb-6">
+        <table class="w-full text-white">
+         <thead>
+          <tr class="border-b-2 border-white border-opacity-30">
+           <th class="text-left py-4 px-4 font-bold text-xl" style="font-family: 'Space Grotesk', sans-serif;">Week</th>
+           <th class="text-left py-4 px-4 font-bold text-xl" style="font-family: 'Space Grotesk', sans-serif;">Predicted Demand</th>
+           <th class="text-left py-4 px-4 font-bold text-xl" style="font-family: 'Space Grotesk', sans-serif;">Confidence</th>
+          </tr>
+         </thead>
+         <tbody>
+          <tr class="border-b border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 transition-all">
+           <td class="py-4 px-4 text-lg font-semibold">Week 1</td>
+           <td class="py-4 px-4 text-lg font-semibold">1,180 units</td>
+           <td class="py-4 px-4"><span class="px-4 py-2 rounded-full bg-green-500 bg-opacity-30 border-2 border-green-400 font-bold text-sm">High</span></td>
+          </tr>
+          <tr class="border-b border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 transition-all">
+           <td class="py-4 px-4 text-lg font-semibold">Week 2</td>
+           <td class="py-4 px-4 text-lg font-semibold">1,245 units</td>
+           <td class="py-4 px-4"><span class="px-4 py-2 rounded-full bg-green-500 bg-opacity-30 border-2 border-green-400 font-bold text-sm">High</span></td>
+          </tr>
+          <tr class="border-b border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 transition-all">
+           <td class="py-4 px-4 text-lg font-semibold">Week 3</td>
+           <td class="py-4 px-4 text-lg font-semibold">1,310 units</td>
+           <td class="py-4 px-4"><span class="px-4 py-2 rounded-full bg-yellow-500 bg-opacity-30 border-2 border-yellow-400 font-bold text-sm">Medium</span></td>
+          </tr>
+          <tr class="hover:bg-white hover:bg-opacity-10 transition-all">
+           <td class="py-4 px-4 text-lg font-semibold">Week 4</td>
+           <td class="py-4 px-4 text-lg font-semibold">1,420 units</td>
+           <td class="py-4 px-4"><span class="px-4 py-2 rounded-full bg-yellow-500 bg-opacity-30 border-2 border-yellow-400 font-bold text-sm">Medium</span></td>
+          </tr>
+         </tbody>
+        </table>
+       </div><!-- Visual Graph Representation -->
+       <div class="mb-6 p-6 bg-white bg-opacity-5 rounded-2xl border-2 border-white border-opacity-30">
+        <h4 class="text-xl font-bold text-white mb-4 text-center">📈 Visual Demand Trend</h4>
+        <div class="relative h-64"><!-- Y-axis labels -->
+         <div class="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-white text-xs"><span>1,500</span> <span>1,350</span> <span>1,200</span> <span>1,050</span> <span>900</span>
+         </div><!-- Graph area -->
+         <div class="absolute left-14 right-0 top-0 bottom-8"><!-- Grid lines -->
+          <div class="absolute inset-0 flex flex-col justify-between">
+           <div class="border-t border-white border-opacity-20"></div>
+           <div class="border-t border-white border-opacity-20"></div>
+           <div class="border-t border-white border-opacity-20"></div>
+           <div class="border-t border-white border-opacity-20"></div>
+           <div class="border-t border-white border-opacity-20"></div>
+          </div><!-- Confidence band (light background) -->
+          <svg class="absolute inset-0 w-full h-full"><defs>
+            <lineargradient id="confidenceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+             <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.3" />
+             <stop offset="50%" style="stop-color:#22c55e;stop-opacity:0.2" />
+             <stop offset="100%" style="stop-color:#16a34a;stop-opacity:0.3" />
+            </lineargradient>
+           </defs> <!-- Upper confidence bound --> <path d="M 0 35 L 100 28 L 200 20 L 300 10" stroke="#4ade80" stroke-width="1" fill="none" stroke-dasharray="5,5" opacity="0.5" /> <!-- Main prediction line --> <path d="M 0 45 L 100 40 L 200 32 L 300 20" stroke="#fff" stroke-width="3" fill="none" filter="drop-shadow(0 0 8px rgba(255,255,255,0.8))" /> <!-- Lower confidence bound --> <path d="M 0 55 L 100 52 L 200 44 L 300 30" stroke="#4ade80" stroke-width="1" fill="none" stroke-dasharray="5,5" opacity="0.5" /> <!-- Confidence band fill --> <path d="M 0 35 L 100 28 L 200 20 L 300 10 L 300 30 L 200 44 L 100 52 L 0 55 Z" fill="url(#confidenceGradient)" /> <!-- Data points --> <circle cx="0" cy="45" r="5" fill="#667eea" stroke="#fff" stroke-width="2" /> <circle cx="100" cy="40" r="5" fill="#667eea" stroke="#fff" stroke-width="2" /> <circle cx="200" cy="32" r="5" fill="#764ba2" stroke="#fff" stroke-width="2" /> <circle cx="300" cy="20" r="5" fill="#f093fb" stroke="#fff" stroke-width="2" />
+          </svg><!-- Trend arrow -->
+          <div class="absolute top-1/4 right-8 text-green-400 text-4xl animate-bounce">
+           ↗
+          </div>
+         </div><!-- X-axis labels -->
+         <div class="absolute left-14 right-0 bottom-0 h-8 flex justify-between text-white text-xs items-end"><span>Week 1</span> <span>Week 2</span> <span>Week 3</span> <span>Week 4</span>
+         </div>
+        </div>
+        <div class="mt-4 flex items-center justify-center gap-6 text-sm text-white">
+         <div class="flex items-center gap-2">
+          <div class="w-8 h-0.5 bg-white"></div><span>Prediction</span>
+         </div>
+         <div class="flex items-center gap-2">
+          <div class="w-8 h-0.5 bg-green-400 opacity-50" style="border-top: 1px dashed"></div><span>Confidence Band</span>
+         </div>
+         <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-purple-500 border-2 border-white"></div><span>Data Point</span>
+         </div>
+        </div>
+       </div>
+       <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-opacity-20 rounded-2xl border-2 border-blue-400 border-opacity-50">
+        <p class="text-white font-bold mb-2 text-lg">💡 Insight:</p>
+        <p class="text-white text-lg leading-relaxed">AURA anticipates an upward trend with seasonal acceleration, allowing businesses to prepare before shortages occur—not after.</p>
+       </div>
+      </div><!-- Inventory Optimization Output -->
+      <div class="card-3d mb-12">
+       <h3 class="text-3xl font-bold text-white mb-6" style="font-family: 'Space Grotesk', sans-serif;">📦 Sample Inventory Optimization Output</h3>
+       <p class="text-white text-lg mb-6 opacity-90">Based on the above forecast:</p><!-- Visual Inventory Flow Diagram -->
+       <div class="mb-8 p-6 bg-white bg-opacity-5 rounded-2xl border-2 border-white border-opacity-30">
+        <h4 class="text-xl font-bold text-white mb-6 text-center">🔄 Inventory Optimization Flow</h4>
+        <div class="relative"><!-- Visual flow representation -->
+         <div class="flex items-center justify-between mb-8">
+          <div class="flex-1 text-center">
+           <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-3xl border-4 border-white shadow-lg">
+            📊
+           </div>
+           <p class="text-white font-bold text-sm">Demand Forecast</p>
+           <p class="text-cyan-300 text-2xl font-bold mt-2">1,289 units/day</p>
+          </div>
+          <div class="text-4xl text-white animate-pulse">
+           →
+          </div>
+          <div class="flex-1 text-center">
+           <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl border-4 border-white shadow-lg">
+            ⚙️
+           </div>
+           <p class="text-white font-bold text-sm">AURA Optimization</p>
+           <p class="text-purple-300 text-lg font-bold mt-2">Processing...</p>
+          </div>
+          <div class="text-4xl text-white animate-pulse">
+           →
+          </div>
+          <div class="flex-1 text-center">
+           <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-3xl border-4 border-white shadow-lg">
+            ✅
+           </div>
+           <p class="text-white font-bold text-sm">Action Plan</p>
+           <p class="text-green-300 text-lg font-bold mt-2">Ready to Execute</p>
+          </div>
+         </div>
+        </div>
+       </div>
+       <div class="grid md:grid-cols-2 gap-6 mb-8">
+        <div class="p-6 bg-white bg-opacity-5 rounded-xl border-2 border-white border-opacity-30">
+         <div class="flex items-center justify-between mb-2"><span class="text-white text-lg">Economic Order Quantity (EOQ)</span> <span class="text-3xl font-bold text-white">1,200</span>
+         </div>
+         <p class="text-white text-sm opacity-75">units</p>
+        </div>
+        <div class="p-6 bg-white bg-opacity-5 rounded-xl border-2 border-white border-opacity-30">
+         <div class="flex items-center justify-between mb-2"><span class="text-white text-lg">Safety Stock</span> <span class="text-3xl font-bold text-white">320</span>
+         </div>
+         <p class="text-white text-sm opacity-75">units</p>
+        </div>
+        <div class="p-6 bg-white bg-opacity-5 rounded-xl border-2 border-white border-opacity-30">
+         <div class="flex items-center justify-between mb-2"><span class="text-white text-lg">Reorder Point (ROP)</span> <span class="text-3xl font-bold text-white">1,540</span>
+         </div>
+         <p class="text-white text-sm opacity-75">units</p>
+        </div>
+        <div class="p-6 bg-white bg-opacity-5 rounded-xl border-2 border-white border-opacity-30">
+         <div class="flex items-center justify-between mb-2"><span class="text-white text-lg">Stockout Risk</span> <span class="text-3xl font-bold text-green-300">Low</span>
+         </div>
+         <p class="text-white text-sm opacity-75">Overstock Risk: <strong>Controlled</strong></p>
+        </div>
+       </div>
+       <div class="p-6 bg-gradient-to-r from-green-500 to-teal-500 bg-opacity-20 rounded-2xl border-2 border-green-400 border-opacity-50">
+        <p class="text-white font-bold mb-3 text-lg">✅ Action Recommendation:</p>
+        <p class="text-white text-lg leading-relaxed">Initiate replenishment within the next 3–4 days to maintain service levels while minimizing holding costs.</p>
+       </div>
+      </div><!-- Why These Domains Matter -->
+      <div class="card-3d mb-12">
+       <h3 class="text-4xl font-bold text-white mb-8 text-center" style="font-family: 'Space Grotesk', sans-serif;">🎯 Why These Domains Matter to Industry</h3>
+       <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <div class="p-6 bg-gradient-to-br from-purple-600 to-blue-600 bg-opacity-20 rounded-2xl border-2 border-purple-400 border-opacity-40">
+         <div class="text-5xl mb-4 text-center">
+          📈
+         </div>
+         <h4 class="text-2xl font-bold text-white mb-4 text-center" style="font-family: 'Space Grotesk', sans-serif;">Demand Forecasting: The Strategic Core</h4>
+         <p class="text-white text-lg mb-4 leading-relaxed">Across retail, e-commerce, manufacturing, and logistics:</p>
+         <ul class="space-y-3 text-white text-lg">
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">•</span> <span><strong>20–30%</strong> inventory costs are driven by forecast errors</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">•</span> <span>Demand volatility directly impacts revenue, customer trust, and operations</span></li>
+         </ul>
+         <p class="text-white font-bold text-lg mt-6 mb-3">Accurate forecasting enables:</p>
+         <div class="space-y-2">
+          <div class="p-3 bg-white bg-opacity-10 rounded-lg">
+           ✓ Proactive planning
+          </div>
+          <div class="p-3 bg-white bg-opacity-10 rounded-lg">
+           ✓ Reduced waste
+          </div>
+          <div class="p-3 bg-white bg-opacity-10 rounded-lg">
+           ✓ Faster response to market shifts
+          </div>
+         </div>
+        </div>
+        <div class="p-6 bg-gradient-to-br from-green-600 to-teal-600 bg-opacity-20 rounded-2xl border-2 border-green-400 border-opacity-40">
+         <div class="text-5xl mb-4 text-center">
+          📦
+         </div>
+         <h4 class="text-2xl font-bold text-white mb-4 text-center" style="font-family: 'Space Grotesk', sans-serif;">Inventory Optimization: Where Forecasts Become Value</h4>
+         <p class="text-white text-lg mb-4 leading-relaxed">Forecasts alone don't save money—decisions do.</p>
+         <p class="text-white font-bold text-lg mb-3">Inventory optimization ensures:</p>
+         <ul class="space-y-3 text-white text-lg">
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">✓</span> <span>Capital is not locked in excess stock</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">✓</span> <span>Stockouts don't erode customer confidence</span></li>
+          <li class="flex items-start gap-3"><span class="text-2xl flex-shrink-0">✓</span> <span>Warehouses operate lean and responsive</span></li>
+         </ul>
+         <div class="mt-6 p-4 bg-white bg-opacity-10 rounded-lg border-l-4 border-teal-400">
+          <p class="text-white italic">AURA bridges this gap by automatically translating predictions into optimal inventory actions.</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- Why AURA Is Different -->
+      <div class="card-3d">
+       <h3 class="text-4xl font-bold text-white mb-8 text-center" style="font-family: 'Space Grotesk', sans-serif;">⚡ Why AURA Is Different</h3>
+       <div class="grid md:grid-cols-2 gap-8 mb-8">
+        <div class="p-8 bg-white bg-opacity-5 rounded-2xl border-2 border-gray-400 border-opacity-40 text-center">
+         <p class="text-white text-2xl mb-4 opacity-75">Most systems answer:</p>
+         <p class="text-4xl font-bold text-white" style="font-family: 'Space Grotesk', sans-serif;">"What might happen?"</p>
+        </div>
+        <div class="p-8 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 bg-opacity-30 rounded-2xl border-4 border-white border-opacity-60 text-center">
+         <p class="text-white text-2xl mb-4 font-bold">AURA answers:</p>
+         <p class="text-4xl font-bold text-white glow" style="font-family: 'Space Grotesk', sans-serif;">"What should you do next?"</p>
+        </div>
+       </div>
+       <div class="p-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-opacity-20 rounded-2xl border-2 border-purple-400 border-opacity-50">
+        <p class="text-2xl text-white text-center leading-relaxed">By unifying forecasting and optimization, AURA transforms supply chains from <strong>reactive systems</strong> into <strong class="gradient-text">adaptive, intelligent ecosystems</strong>—built for industries where <span class="text-yellow-300">uncertainty is the norm, not the exception</span>.</p>
+       </div>
+      </div>
+     </div>
     </div>
-
-    <!-- Footer -->
-    <footer id="contact" class="footer">
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="#" class="footer-link">Contact</a>
-                <a href="#" class="footer-link">GitHub</a>
-                <a href="#" class="footer-link">LinkedIn</a>
-                <a href="#" class="footer-link">Twitter</a>
-                <a href="#" class="footer-link">Documentation</a>
-                <a href="#" class="footer-link">API</a>
-            </div>
-            <div class="footer-text">
-                © 2025 AURA - Final Year Engineering Project. Built with passion by innovative engineering students using cutting-edge AI technology.
-            </div>
+   </div><!-- Approach Page -->
+   <div id="page-approach" class="page hidden min-h-full bg-approach px-6 py-20">
+    <div class="max-w-6xl mx-auto pt-20">
+     <h1 class="text-7xl font-bold text-white text-center mb-16 glow" style="font-family: 'Orbitron', sans-serif;">Our Approach</h1>
+     <div class="card-3d mb-8">
+      <h3 class="text-4xl font-bold text-white mb-6" style="font-family: 'Space Grotesk', sans-serif;">🎯 The AURA Ensemble Philosophy</h3>
+      <p class="text-xl text-white leading-relaxed mb-6">The AURA Ensemble represents a paradigm shift in predictive analytics. By synthesizing four distinct algorithmic approaches, we create a unified prediction system that transcends the limitations of any single methodology. Each algorithm contributes its unique strengths, resulting in forecasts that are more accurate, reliable, and resilient to market volatility.</p>
+      <p class="text-lg text-white leading-relaxed opacity-90">Our weighted averaging technique dynamically adjusts model contributions based on historical performance, ensuring optimal predictions across diverse market conditions and seasonal patterns.</p>
+     </div>
+     <div class="grid gap-8 mb-8">
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         📊
         </div>
-    </footer>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">ARIMA - Statistical Foundation</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">AutoRegressive Integrated Moving Average (ARIMA) forms the statistical backbone of AURA. This classical time series model excels at capturing linear patterns, trends, and seasonal cycles in historical data.</p>
+         <div class="grid md:grid-cols-2 gap-4">
+          <div class="feature-box">
+           <h5 class="font-bold text-white mb-2">✓ Strengths</h5>
+           <p class="text-white text-sm opacity-90">• Exceptional at identifying seasonality<br>
+            • Handles stationary data masterfully<br>
+            • Transparent, interpretable results</p>
+          </div>
+          <div class="feature-box">
+           <h5 class="font-bold text-white mb-2">⚙️ Applications</h5>
+           <p class="text-white text-sm opacity-90">• Short to medium-term forecasting<br>
+            • Regular seasonal patterns<br>
+            • Linear trend identification</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🔮
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">Prophet · Seasonality &amp; Business Context</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Prophet brings interpretability and real-world realism. It explicitly models seasonality, calendar effects, and external influences that traditional models often miss. In AURA, Prophet ensures forecasts align with recurring patterns and business-driven cycles rather than treating time as a purely mathematical sequence.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-purple-400">
+          <p class="text-white text-sm opacity-90 italic">"Prophet keeps AURA grounded in real business cycles—holidays, weekdays, seasons—not just abstract time series math."</p>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         ⚡
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">XGBoost · Nonlinear Shock Detection</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Real demand is disrupted by spikes, drops, and sudden regime shifts. XGBoost is included to capture these nonlinear fluctuations and rare but impactful events. Its tree-based learning allows AURA to respond intelligently to abrupt changes that linear or seasonal models smooth out.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-cyan-400">
+          <p class="text-white text-sm opacity-90 italic">"XGBoost detects the shocks and anomalies that would otherwise be dismissed as noise by smoother models."</p>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🧠
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">LSTM · Long-Term Memory</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Some patterns only reveal themselves over long horizons. LSTM networks capture deep temporal dependencies and sequential relationships in high-dimensional time series. Within AURA, LSTM provides memory—learning from extended historical context that other models cannot retain.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-green-400">
+          <p class="text-white text-sm opacity-90 italic">"LSTM remembers what others forget—long-term dependencies that define the system's true behavior."</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="card-3d">
+      <h3 class="text-4xl font-bold text-white mb-6 text-center" style="font-family: 'Space Grotesk', sans-serif;">🎯 Why Not One Model—or Many?</h3>
+      <div class="grid md:grid-cols-2 gap-6 mb-8">
+       <div class="p-6 bg-white bg-opacity-5 rounded-2xl border-2 border-red-400 border-opacity-50">
+        <h4 class="text-2xl font-bold text-white mb-3">❌ Single-Model Systems</h4>
+        <p class="text-white opacity-90 leading-relaxed">Single-model systems fail under distribution shifts. They inherit the biases and limitations of their methodology, unable to adapt when the underlying data structure changes.</p>
+       </div>
+       <div class="p-6 bg-white bg-opacity-5 rounded-2xl border-2 border-orange-400 border-opacity-50">
+        <h4 class="text-2xl font-bold text-white mb-3">❌ Large Model Collections</h4>
+        <p class="text-white opacity-90 leading-relaxed">Large model collections add complexity without accountability. Too many weak models create noise, dilute signal, and make the system impossible to interpret or debug.</p>
+       </div>
+      </div>
+      <div class="p-6 bg-gradient-to-r from-green-500 to-blue-500 bg-opacity-20 rounded-2xl border-2 border-white border-opacity-40 mb-6">
+       <h4 class="text-2xl font-bold text-white mb-3 text-center">✓ The AURA Way</h4>
+       <p class="text-xl text-white leading-relaxed text-center">AURA selects <strong>four models with non-overlapping strengths</strong>, then lets them compete and collaborate through a dynamic ensemble. Models earn influence based on real-time performance; no model is permanently dominant.</p>
+      </div>
+      <div class="p-8 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 bg-opacity-30 rounded-2xl border-4 border-white border-opacity-50">
+       <p class="text-2xl text-white text-center leading-relaxed font-bold mb-4">This balance allows AURA to remain <span class="text-cyan-300">autonomous</span> in adaptation, <span class="text-purple-300">unified</span> in decision-making, and <span class="text-green-300">resilient</span> under change—</p>
+       <p class="text-xl text-white text-center italic opacity-95">not by predicting one future, but by continuously negotiating among many.</p>
+      </div>
+     </div>
+    </div>
+   </div><!-- Predict Page - Command Center -->
+   <div id="page-predict" class="page hidden min-h-full bg-predict px-6 py-20">
+    <div class="max-w-7xl mx-auto pt-20">
+     <h1 class="text-6xl font-bold text-white text-center mb-3" style="font-family: 'Orbitron', sans-serif;">Command Center</h1>
+     <p class="text-center text-white text-xl mb-12 opacity-90">Where foresight becomes action</p><!-- Input Intelligence Panel -->
+     <div class="card-3d mb-8">
+      <h3 class="text-2xl font-bold text-white mb-6">⚙️ Input Intelligence</h3>
+      <form id="predictionForm">
+       <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <div><label for="dataSource">Data Source</label> <select id="dataSource" class="form-input"> <option value="csv">CSV Upload</option> <option value="api">API Connection</option> <option value="live">Live Feed</option> <option value="manual">Manual Entry</option> </select>
+        </div>
+        <div><label for="timeHorizon">Time Horizon</label> <select id="timeHorizon" class="form-input"> <option value="1">Next Day</option> <option value="7">Next Week</option> <option value="30" selected>Next Month</option> <option value="90">Next Quarter</option> <option value="365">Next Year</option> </select>
+        </div>
+        <div><label for="confidenceLevel">Confidence Level</label> <select id="confidenceLevel" class="form-input"> <option value="80">80%</option> <option value="90">90%</option> <option value="95" selected>95%</option> <option value="99">99%</option> </select>
+        </div>
+       </div>
+       <div id="csvUploadPanel" class="mb-6"><label>Upload Historical Data</label>
+        <div class="file-upload"><input type="file" id="csvInput" class="hidden" accept=".csv,.xlsx,.xls"> <label for="csvInput" class="cursor-pointer">
+          <div class="text-4xl mb-2">
+           📊
+          </div><p class="text-white font-semibold">Click to upload CSV/Excel</p><p id="csvFileName" class="text-white text-sm mt-2 opacity-75"></p></label>
+        </div>
+       </div>
+       <div id="manualEntryPanel" class="mb-6 hidden"><label for="historicalData">Historical Sales Data (comma-separated)</label> <textarea id="historicalData" class="form-input" rows="2" placeholder="e.g., 100,120,95,130,110,145,160"></textarea>
+       </div>
+       <div class="mb-6"><label>Context Injectors (Optional)</label>
+        <div class="grid md:grid-cols-3 gap-4">
+         <div class="flex items-center p-3 bg-white bg-opacity-5 rounded-lg"><input type="checkbox" id="promotionFlag" class="mr-3"> <label for="promotionFlag" class="cursor-pointer m-0 text-white">🎯 Promotion Active</label>
+         </div>
+         <div class="flex items-center p-3 bg-white bg-opacity-5 rounded-lg"><input type="checkbox" id="seasonalityFlag" class="mr-3"> <label for="seasonalityFlag" class="cursor-pointer m-0 text-white">📅 Seasonal Peak</label>
+         </div>
+         <div class="flex items-center p-3 bg-white bg-opacity-5 rounded-lg"><input type="checkbox" id="externalEvent" class="mr-3"> <label for="externalEvent" class="cursor-pointer m-0 text-white">⚡ External Event</label>
+         </div>
+        </div>
+       </div><button type="submit" id="runPredictionBtn" class="btn-primary w-full"> <span id="runBtnText">🚀 Run Prediction</span> </button>
+      </form>
+     </div><!-- Processing State -->
+     <div id="processingPanel" class="card-3d hidden">
+      <div class="text-center mb-6">
+       <div class="processing-spinner mb-4"></div>
+       <h3 class="text-2xl font-bold text-white">AURA Ensemble Computing...</h3>
+      </div>
+      <div class="grid md:grid-cols-4 gap-4">
+       <div class="algo-status" id="status-arima">
+        <div class="text-3xl mb-2">
+         📊
+        </div>
+        <p class="font-bold">ARIMA</p>
+        <p class="text-sm" id="arima-status">Standby</p>
+       </div>
+       <div class="algo-status" id="status-prophet">
+        <div class="text-3xl mb-2">
+         🔮
+        </div>
+        <p class="font-bold">Prophet</p>
+        <p class="text-sm" id="prophet-status">Standby</p>
+       </div>
+       <div class="algo-status" id="status-xgboost">
+        <div class="text-3xl mb-2">
+         ⚡
+        </div>
+        <p class="font-bold">XGBoost</p>
+        <p class="text-sm" id="xgboost-status">Standby</p>
+       </div>
+       <div class="algo-status" id="status-lstm">
+        <div class="text-3xl mb-2">
+         🧠
+        </div>
+        <p class="font-bold">LSTM</p>
+        <p class="text-sm" id="lstm-status">Standby</p>
+       </div>
+      </div>
+     </div><!-- Results Dashboard -->
+     <div id="resultsPanel" class="hidden"><!-- Unified Forecast Output -->
+      <div class="card-3d mb-6">
+       <div class="flex justify-between items-start mb-6">
+        <div>
+         <h3 class="text-3xl font-bold text-white mb-2">📈 Unified Forecast</h3>
+         <p class="text-white opacity-75">Ensemble prediction with confidence bands</p>
+        </div>
+        <div id="modelHealth" class="px-4 py-2 rounded-lg font-bold text-sm">
+         🟢 STABLE
+        </div>
+       </div>
+       <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <div class="metric-box border-2 border-green-400">
+         <p class="text-sm mb-2 opacity-75">Best Case</p>
+         <p class="text-4xl font-bold text-green-300" id="bestCase">—</p>
+         <p class="text-xs opacity-75">units/day</p>
+        </div>
+        <div class="metric-box border-4 border-white">
+         <p class="text-sm mb-2 opacity-75">Expected</p>
+         <p class="text-5xl font-bold" id="expectedCase">—</p>
+         <p class="text-xs opacity-75">units/day</p>
+        </div>
+        <div class="metric-box border-2 border-red-400">
+         <p class="text-sm mb-2 opacity-75">Worst Case</p>
+         <p class="text-4xl font-bold text-red-300" id="worstCase">—</p>
+         <p class="text-xs opacity-75">units/day</p>
+        </div>
+       </div><!-- Model Influence Strip -->
+       <div class="mb-6">
+        <p class="text-white font-bold mb-3">Model Influence Weights</p>
+        <div class="flex gap-2 h-12 rounded-lg overflow-hidden">
+         <div id="arimaWeight" class="flex items-center justify-center text-white font-bold text-sm" style="background: linear-gradient(135deg, #667eea, #764ba2); width: 25%;">
+          ARIMA 25%
+         </div>
+         <div id="prophetWeight" class="flex items-center justify-center text-white font-bold text-sm" style="background: linear-gradient(135deg, #f093fb, #f5576c); width: 25%;">
+          Prophet 25%
+         </div>
+         <div id="xgboostWeight" class="flex items-center justify-center text-white font-bold text-sm" style="background: linear-gradient(135deg, #4facfe, #00f2fe); width: 25%;">
+          XGBoost 25%
+         </div>
+         <div id="lstmWeight" class="flex items-center justify-center text-white font-bold text-sm" style="background: linear-gradient(135deg, #43e97b, #38f9d7); width: 25%;">
+          LSTM 25%
+         </div>
+        </div>
+        <p class="text-white text-sm mt-2 opacity-75">Dynamic weights adjusted based on recent performance</p>
+       </div><!-- Confidence Band Visualization -->
+       <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+        <p class="text-white font-bold mb-2">Confidence Interval</p>
+        <div class="relative h-8 bg-gray-700 rounded-lg overflow-hidden">
+         <div id="confidenceBand" class="h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 opacity-40"></div>
+         <div class="absolute top-0 left-1/2 w-1 h-full bg-white transform -translate-x-1/2"></div>
+        </div>
+        <div class="flex justify-between text-xs text-white mt-1 opacity-75"><span>Worst</span> <span>Expected</span> <span>Best</span>
+        </div>
+       </div>
+      </div><!-- Performance Transparency -->
+      <div class="card-3d mb-6">
+       <h3 class="text-2xl font-bold text-white mb-6">📊 Performance Metrics</h3>
+       <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <div class="metric-box">
+         <p class="text-sm mb-2 opacity-75">RMSE (Lower is better)</p>
+         <p class="text-3xl font-bold" id="rmseValue">—</p>
+         <div class="progress-bar mt-2">
+          <div id="rmseBar" class="progress-fill bg-gradient-to-r from-green-500 to-blue-500" style="width: 0%"></div>
+         </div>
+        </div>
+        <div class="metric-box">
+         <p class="text-sm mb-2 opacity-75">MAPE (Error %)</p>
+         <p class="text-3xl font-bold" id="mapeValue">—</p>
+         <div class="progress-bar mt-2">
+          <div id="mapeBar" class="progress-fill bg-gradient-to-r from-green-500 to-yellow-500" style="width: 0%"></div>
+         </div>
+        </div>
+        <div class="metric-box">
+         <p class="text-sm mb-2 opacity-75">R² Score</p>
+         <p class="text-3xl font-bold" id="r2Value">—</p>
+         <div class="progress-bar mt-2">
+          <div id="r2Bar" class="progress-fill bg-gradient-to-r from-blue-500 to-purple-500" style="width: 0%"></div>
+         </div>
+        </div>
+       </div>
+       <div id="driftAlert" class="hidden p-4 bg-yellow-500 bg-opacity-20 rounded-lg border-2 border-yellow-400 border-opacity-50">
+        <p class="text-yellow-300 font-bold mb-1">⚠️ Drift Detected</p>
+        <p class="text-white text-sm">Recent data patterns differ from historical trends by 12%. Model is adapting.</p>
+       </div>
+      </div><!-- Decision Intelligence Layer -->
+      <div class="card-3d mb-6">
+       <h3 class="text-2xl font-bold text-white mb-6">🎯 Decision Intelligence</h3><!-- Actionable Recommendations -->
+       <div class="mb-6">
+        <p class="text-white font-bold mb-3">Recommended Actions</p>
+        <div class="space-y-3" id="recommendations"><!-- Populated dynamically -->
+        </div>
+       </div><!-- Risk Flags -->
+       <div class="grid md:grid-cols-2 gap-4 mb-6">
+        <div id="stockoutRisk" class="p-4 rounded-lg border-2">
+         <div class="flex items-center justify-between mb-2"><span class="font-bold">Stockout Risk</span> <span id="stockoutProbability" class="text-2xl font-bold">—</span>
+         </div>
+         <div class="progress-bar">
+          <div id="stockoutBar" class="h-full bg-red-500" style="width: 0%"></div>
+         </div>
+        </div>
+        <div id="overstockRisk" class="p-4 rounded-lg border-2">
+         <div class="flex items-center justify-between mb-2"><span class="font-bold">Overstock Risk</span> <span id="overstockProbability" class="text-2xl font-bold">—</span>
+         </div>
+         <div class="progress-bar">
+          <div id="overstockBar" class="h-full bg-orange-500" style="width: 0%"></div>
+         </div>
+        </div>
+       </div><!-- What-If Simulator -->
+       <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+        <p class="text-white font-bold mb-3">⚡ What-If Simulator</p>
+        <div class="grid md:grid-cols-2 gap-4 mb-3">
+         <div><label for="demandAdjust" class="text-sm">Adjust Demand Forecast</label>
+          <div class="flex gap-2 items-center"><input type="range" id="demandAdjust" min="-50" max="50" value="0" class="flex-1"> <span id="demandAdjustValue" class="text-white font-bold w-16 text-right">0%</span>
+          </div>
+         </div>
+         <div class="flex items-end"><button id="runSimulation" class="btn-primary w-full py-2">Run Simulation</button>
+         </div>
+        </div>
+        <div id="simulationResult" class="text-white text-sm opacity-90 hidden"></div>
+       </div>
+      </div><!-- Explainability & Trust -->
+      <div class="card-3d mb-6">
+       <h3 class="text-2xl font-bold text-white mb-6">🔍 Why This Prediction?</h3>
+       <div id="explanationText" class="text-white text-lg leading-relaxed mb-6"><!-- Populated dynamically -->
+       </div>
+       <div class="mb-6">
+        <p class="text-white font-bold mb-3">Key Drivers</p>
+        <div class="space-y-2" id="keyDrivers"><!-- Populated dynamically -->
+        </div>
+       </div>
+       <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+        <p class="text-white font-bold mb-2">Historical vs Predicted Comparison</p>
+        <div class="grid grid-cols-2 gap-4 text-center">
+         <div>
+          <p class="text-sm opacity-75 mb-1">Avg Historical</p>
+          <p class="text-2xl font-bold" id="historicalAvg">—</p>
+         </div>
+         <div>
+          <p class="text-sm opacity-75 mb-1">Predicted Change</p>
+          <p class="text-2xl font-bold" id="predictedChange">—</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- Operational Outputs -->
+      <div class="card-3d">
+       <h3 class="text-2xl font-bold text-white mb-6">💾 Export &amp; Actions</h3>
+       <div class="grid md:grid-cols-2 gap-4 mb-6"><button class="prediction-method-btn text-left">
+         <div class="text-3xl mb-2">
+          📄
+         </div><p class="font-bold">Export to CSV</p><p class="text-sm opacity-75">Download prediction data</p></button> <button class="prediction-method-btn text-left">
+         <div class="text-3xl mb-2">
+          📊
+         </div><p class="font-bold">Generate PDF Report</p><p class="text-sm opacity-75">Full analysis document</p></button> <button class="prediction-method-btn text-left">
+         <div class="text-3xl mb-2">
+          🔔
+         </div><p class="font-bold">Set Alert Triggers</p><p class="text-sm opacity-75">Threshold notifications</p></button> <button class="prediction-method-btn text-left">
+         <div class="text-3xl mb-2">
+          🔗
+         </div><p class="font-bold">API Push</p><p class="text-sm opacity-75">Send to external system</p></button>
+       </div>
+       <div class="p-3 bg-white bg-opacity-5 rounded-lg text-center">
+        <p class="text-white text-sm"><span class="font-bold">Version:</span> v2024.01.15-03:42 UTC | <span class="font-bold">Audit ID:</span> AUR-7F8A2C9E | <span class="text-green-300">✓ Reproducible</span></p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Future Enhancements Page -->
+   <div id="page-future" class="page hidden min-h-full bg-future px-6 py-20">
+    <div class="max-w-6xl mx-auto pt-20">
+     <h1 class="text-7xl font-bold text-white text-center mb-8 glow" style="font-family: 'Orbitron', sans-serif;">Future Enhancements</h1>
+     <p class="text-2xl text-white text-center mb-16 max-w-4xl mx-auto leading-relaxed opacity-95">AURA has been designed as a modular and extensible platform. While the current system delivers strong forecasting and inventory optimization performance, its architecture allows for continuous evolution toward full autonomy and large-scale industrial deployment.</p>
+     <div class="grid gap-8 mb-8"><!-- RL-Driven Autonomy -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🤖
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">1. Reinforcement Learning–Driven Autonomy</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Future versions of AURA can integrate reinforcement learning to autonomously optimize replenishment and restocking policies. By learning from long-term rewards rather than static rules, AURA can continuously refine decisions based on real-world feedback and changing market dynamics.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-blue-400">
+          <p class="text-white text-sm opacity-90"><strong>Impact:</strong> Self-improving decision systems that adapt without manual retraining</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- Cloud-Native -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         ☁️
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">2. Cloud-Native &amp; Distributed Deployment</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Deploying AURA on cloud platforms will enable scalable, multi-warehouse operations with real-time collaboration, rapid retraining, and minimal downtime—supporting enterprise-grade demand planning across geographies.</p>
+         <div class="grid md:grid-cols-3 gap-4">
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            🌍
+           </div>
+           <p class="font-bold text-white text-sm">Global Scale</p>
+          </div>
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            ⚡
+           </div>
+           <p class="font-bold text-white text-sm">Real-Time Sync</p>
+          </div>
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            🔄
+           </div>
+           <p class="font-bold text-white text-sm">Zero Downtime</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div><!-- Causal & Bayesian -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🔬
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">3. Causal &amp; Bayesian Intelligence</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Incorporating causal inference and Bayesian models will improve interpretability by identifying true cause–effect relationships between variables such as pricing, promotions, and demand surges—moving beyond correlation-based forecasting.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-purple-400">
+          <p class="text-white text-sm opacity-90 italic">"Understanding why demand changes, not just predicting that it will."</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- Sustainability -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🌱
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">4. Sustainability-Centric Optimization</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Future enhancements can integrate green logistics metrics, enabling AURA to optimize inventory decisions while minimizing carbon footprint, transportation waste, and storage inefficiencies—aligning analytics with sustainability goals.</p>
+         <div class="grid md:grid-cols-2 gap-4">
+          <div class="feature-box">
+           <h5 class="font-bold text-white mb-2">♻️ Green Metrics</h5>
+           <p class="text-white text-sm opacity-90">Carbon-aware routing &amp; storage</p>
+          </div>
+          <div class="feature-box">
+           <h5 class="font-bold text-white mb-2">📊 ESG Reporting</h5>
+           <p class="text-white text-sm opacity-90">Environmental impact tracking</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div><!-- IoT & ERP -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         📡
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">5. IoT &amp; ERP Integration</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">By connecting with IoT sensors and ERP systems, AURA can achieve real-time visibility into inventory movement, environmental conditions, and production rates—enabling instant demand sensing and automated ordering.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-cyan-400">
+          <p class="text-white text-sm opacity-90"><strong>Technologies:</strong> RFID tracking, temperature sensors, production line APIs, SAP/Oracle integration</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- Advanced Visualization -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         📊
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">6. Advanced Visualization &amp; Decision UX</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">The prediction dashboard can be expanded with interactive "what-if" simulations, risk-aware recommendations, and scenario analysis—empowering decision-makers to evaluate outcomes before execution.</p>
+         <div class="grid md:grid-cols-3 gap-4">
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            🎮
+           </div>
+           <p class="font-bold text-white text-sm">Interactive Scenarios</p>
+          </div>
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            🎯
+           </div>
+           <p class="font-bold text-white text-sm">Risk Heatmaps</p>
+          </div>
+          <div class="feature-box text-center">
+           <div class="text-3xl mb-2">
+            📈
+           </div>
+           <p class="font-bold text-white text-sm">Live Dashboards</p>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div><!-- Generative & Transfer Learning -->
+      <div class="card-3d">
+       <div class="flex items-start gap-4">
+        <div class="text-6xl">
+         🧬
+        </div>
+        <div class="flex-1">
+         <h4 class="text-3xl font-bold text-white mb-4" style="font-family: 'Space Grotesk', sans-serif;">7. Generative &amp; Transfer Learning</h4>
+         <p class="text-lg text-white leading-relaxed mb-4">Integrating generative forecasting models and transfer learning will allow AURA to perform effectively in sparse-data environments, rapidly adapting to new products, stores, or markets with minimal historical data.</p>
+         <div class="p-4 bg-white bg-opacity-5 rounded-lg border-l-4 border-green-400">
+          <p class="text-white text-sm opacity-90"><strong>Use Cases:</strong> New product launches, emerging markets, seasonal item planning</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Vision Forward -->
+     <div class="card-3d">
+      <h3 class="text-4xl font-bold text-white mb-6 text-center" style="font-family: 'Space Grotesk', sans-serif;">🚀 Vision Forward</h3>
+      <div class="p-8 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 bg-opacity-30 rounded-2xl border-4 border-white border-opacity-50">
+       <p class="text-2xl text-white text-center leading-relaxed mb-4">These enhancements position AURA to evolve from an <span class="font-bold text-cyan-300">intelligent forecasting system</span> into a <span class="font-bold text-purple-300">fully autonomous</span>, <span class="font-bold text-green-300">real-time</span>, and <span class="font-bold text-yellow-300">sustainability-aware</span> decision platform—</p>
+       <p class="text-xl text-white text-center italic opacity-95">capable of supporting complex, volatile, and large-scale supply chain ecosystems.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 mt-8">
+       <div class="p-6 bg-gradient-to-br from-blue-500 to-cyan-500 bg-opacity-20 rounded-2xl border-2 border-cyan-400 border-opacity-40 text-center">
+        <div class="text-5xl mb-3">
+         🎯
+        </div>
+        <h4 class="text-xl font-bold text-white mb-2">Autonomous</h4>
+        <p class="text-white text-sm opacity-90">Self-learning, self-optimizing</p>
+       </div>
+       <div class="p-6 bg-gradient-to-br from-purple-500 to-pink-500 bg-opacity-20 rounded-2xl border-2 border-purple-400 border-opacity-40 text-center">
+        <div class="text-5xl mb-3">
+         ⚡
+        </div>
+        <h4 class="text-xl font-bold text-white mb-2">Real-Time</h4>
+        <p class="text-white text-sm opacity-90">Instant sensing, instant action</p>
+       </div>
+       <div class="p-6 bg-gradient-to-br from-green-500 to-teal-500 bg-opacity-20 rounded-2xl border-2 border-green-400 border-opacity-40 text-center">
+        <div class="text-5xl mb-3">
+         🌍
+        </div>
+        <h4 class="text-xl font-bold text-white mb-2">Sustainable</h4>
+        <p class="text-white text-sm opacity-90">Green-first decision-making</p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Team Page -->
+   <div id="page-team" class="page hidden min-h-full bg-team px-6 py-20">
+    <div class="max-w-6xl mx-auto pt-20">
+     <h1 class="text-6xl font-bold text-white text-center mb-12 glow" style="font-family: 'Orbitron', sans-serif;">Meet Our Team</h1>
+     <div class="card-3d mb-12">
+      <h2 class="text-4xl font-bold text-white mb-6 text-center" style="font-family: 'Space Grotesk', sans-serif;">The Team Behind AURA</h2>
+      <p class="text-xl text-white leading-relaxed text-center max-w-4xl mx-auto">AURA was built through deep collaboration between three Final-Year AI &amp; ML students from BGS College of Engineering and Technology (BGSCET). Each member brought specialized expertise—systems architecture, technical documentation, and analytical validation—working together to transform a concept into a production-ready forecasting framework.</p>
+     </div>
+     <div class="grid md:grid-cols-3 gap-8 mb-12">
+      <div class="team-card">
+       <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-6xl">
+        👨‍💻
+       </div>
+       <h3 class="text-2xl font-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Syed Nadeem Ahmed</h3>
+       <p class="text-lg text-white opacity-90 mb-4 font-semibold">Project Lead · Systems Architecture &amp; Ensemble Intelligence</p>
+       <p class="text-white text-sm leading-relaxed opacity-85">Final-year AI &amp; ML student at BGSCET. Led the design and implementation of AURA's core architecture, including the hybrid forecasting ensemble, model orchestration, and end-to-end system integration. Oversaw analytical strategy, performance evaluation, and decision intelligence while coordinating technical alignment across the project.</p>
+      </div>
+      <div class="team-card">
+       <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-6xl">
+        📝
+       </div>
+       <h3 class="text-2xl font-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Karthik G</h3>
+       <p class="text-lg text-white opacity-90 mb-4 font-semibold">Technical Documentation &amp; System Structuring</p>
+       <p class="text-white text-sm leading-relaxed opacity-85">Final-year AI &amp; ML student at BGSCET. Contributed to system-level understanding, workflow structuring, and technical documentation. Played a key role in organizing architectural diagrams, validating system flow, and supporting model interpretation and presentation readiness.</p>
+      </div>
+      <div class="team-card">
+       <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-6xl">
+        📊
+       </div>
+       <h3 class="text-2xl font-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">M R Siddarth</h3>
+       <p class="text-lg text-white opacity-90 mb-4 font-semibold">Analytical Modeling &amp; Conceptual Validation</p>
+       <p class="text-white text-sm leading-relaxed opacity-85">Final-year AI &amp; ML student at BGSCET. Contributed to analytical reasoning, algorithm validation, and conceptual refinement of forecasting components. Assisted in reviewing model behavior, refining architectural visuals, and strengthening the technical coherence of the system.</p>
+      </div>
+     </div>
+     <div class="card-3d text-center">
+      <h3 class="text-3xl font-bold text-white mb-6" style="font-family: 'Space Grotesk', sans-serif;">🤝 Collective Note</h3>
+      <p class="text-xl text-white leading-relaxed max-w-3xl mx-auto">All team members are Final-Year Artificial Intelligence &amp; Machine Learning students from BGS College of Engineering and Technology (BGSCET). Like AURA itself, the team operated as independent modules working in harmony—engineering depth, technical documentation, and analytical validation converged to deliver a resilient, adaptive, and future-ready decision intelligence framework.</p>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      site_title: "AURA",
+      tagline: "Autonomous Unified Resilient Analytics",
+      intro_heading: "Welcome to the Future of Forecasting",
+      intro_text: "Revolutionizing demand forecasting and inventory optimization through the power of ensemble machine learning. Our AURA platform combines cutting-edge algorithms to deliver unparalleled accuracy and insights, transforming raw data into strategic business intelligence.",
+      approach_title: "Our Approach",
+      future_title: "Future Enhancements",
+      team_title: "Meet Our Team",
+      predict_title: "Command Center"
+    };
 
-    <script>
-        // Create animated tech elements
-        function createTechElements() {
-            const techContainer = document.getElementById('techElements');
-            const techSymbols = ['AI', 'ML', '{}', '<>', '∞', '⚡', '🚀', '💡', '📊', '🔮', '⚙️', '🎯', '📈', '🔬', '💻', '🌐'];
-            const elementCount = 25;
+    let currentPage = 'home';
+    let currentPredictionData = null;
 
-            for (let i = 0; i < elementCount; i++) {
-                const element = document.createElement('div');
-                element.className = 'tech-element';
-                element.textContent = techSymbols[Math.floor(Math.random() * techSymbols.length)];
-                element.style.left = Math.random() * 100 + '%';
-                element.style.animationDelay = Math.random() * 20 + 's';
-                element.style.animationDuration = (Math.random() * 15 + 15) + 's';
-                element.style.fontSize = (Math.random() * 1 + 1) + 'rem';
-                techContainer.appendChild(element);
-            }
+    // Navigation functionality
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.dataset.page;
+        
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById(`page-${page}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        
+        currentPage = page;
+      });
+    });
+
+    // Data Source Switcher
+    const dataSourceSelect = document.getElementById('dataSource');
+    const csvUploadPanel = document.getElementById('csvUploadPanel');
+    const manualEntryPanel = document.getElementById('manualEntryPanel');
+
+    dataSourceSelect.addEventListener('change', (e) => {
+      const source = e.target.value;
+      
+      if (source === 'csv') {
+        csvUploadPanel.classList.remove('hidden');
+        manualEntryPanel.classList.add('hidden');
+      } else if (source === 'manual') {
+        csvUploadPanel.classList.add('hidden');
+        manualEntryPanel.classList.remove('hidden');
+      } else {
+        csvUploadPanel.classList.add('hidden');
+        manualEntryPanel.classList.add('hidden');
+      }
+    });
+
+    // CSV File Upload
+    const csvInput = document.getElementById('csvInput');
+    const csvFileName = document.getElementById('csvFileName');
+    
+    csvInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        const size = (file.size / 1024 / 1024).toFixed(2);
+        csvFileName.textContent = `${file.name} (${size} MB)`;
+      }
+    });
+
+    // Prediction Form Submission
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const dataSource = document.getElementById('dataSource').value;
+      const timeHorizon = parseInt(document.getElementById('timeHorizon').value);
+      const confidenceLevel = parseInt(document.getElementById('confidenceLevel').value);
+      
+      // Context flags
+      const hasPromotion = document.getElementById('promotionFlag').checked;
+      const hasSeasonal = document.getElementById('seasonalityFlag').checked;
+      const hasExternal = document.getElementById('externalEvent').checked;
+
+      let dataValid = false;
+      let historicalData = [];
+
+      if (dataSource === 'csv' && csvInput.files.length > 0) {
+        dataValid = true;
+        historicalData = generateSampleData(50);
+      } else if (dataSource === 'manual') {
+        const manualData = document.getElementById('historicalData').value;
+        if (manualData.trim()) {
+          historicalData = manualData.split(',').map(d => parseFloat(d.trim())).filter(d => !isNaN(d));
+          dataValid = historicalData.length >= 5;
         }
+      } else if (dataSource === 'api' || dataSource === 'live') {
+        dataValid = true;
+        historicalData = generateSampleData(100);
+      }
 
-        // Background slideshow functionality
-        function initializeBackgroundSlideshow() {
-            const slides = document.querySelectorAll('.background-slide');
-            let currentSlide = 0;
-            
-            function nextSlide() {
-                slides[currentSlide].classList.remove('active');
-                currentSlide = (currentSlide + 1) % slides.length;
-                slides[currentSlide].classList.add('active');
-            }
-            
-            // Change slide every 8 seconds
-            setInterval(nextSlide, 8000);
-            
-            // Preload images for smooth transitions
-            const imageUrls = [
-                'https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2025&q=80',
-                'https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80',
-                'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-                'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-                'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2134&q=80'
-            ];
-            
-            imageUrls.forEach(url => {
-                const img = new Image();
-                img.src = url;
-            });
+      if (!dataValid) {
+        return;
+      }
+
+      const runBtn = document.getElementById('runPredictionBtn');
+      const runBtnText = document.getElementById('runBtnText');
+      runBtn.disabled = true;
+      runBtnText.textContent = '⏳ Processing...';
+
+      document.getElementById('resultsPanel').classList.add('hidden');
+      document.getElementById('processingPanel').classList.remove('hidden');
+
+      await runPrediction(historicalData, timeHorizon, confidenceLevel, hasPromotion, hasSeasonal, hasExternal);
+
+      runBtn.disabled = false;
+      runBtnText.textContent = '🚀 Run Prediction';
+    });
+
+    function generateSampleData(count) {
+      const data = [];
+      let base = 400;
+      for (let i = 0; i < count; i++) {
+        base = base + (Math.random() - 0.48) * 30;
+        data.push(Math.max(100, Math.round(base)));
+      }
+      return data;
+    }
+
+    async function runPrediction(historicalData, timeHorizon, confidenceLevel, promotion, seasonal, external) {
+      const algorithms = ['arima', 'prophet', 'xgboost', 'lstm'];
+      const stages = ['Initializing...', 'Loading data...', 'Training...', 'Computing...', 'Complete �����'];
+      
+      for (let i = 0; i < algorithms.length; i++) {
+        const algo = algorithms[i];
+        
+        for (let stage of stages) {
+          document.getElementById(`${algo}-status`).textContent = stage;
+          
+          if (stage === 'Complete ✓') {
+            document.getElementById(`status-${algo}`).classList.remove('processing');
+            document.getElementById(`status-${algo}`).classList.add('complete');
+          } else if (stage !== 'Initializing...') {
+            document.getElementById(`status-${algo}`).classList.add('processing');
+          }
+          
+          await sleep(Math.random() * 500 + 300);
         }
+      }
+      
+      await sleep(800);
 
-        // Animate counter values
-        function animateCounters() {
-            const counters = document.querySelectorAll('.metric-value');
-            
-            counters.forEach(counter => {
-                const target = parseInt(counter.getAttribute('data-target'));
-                const duration = 2500;
-                const step = target / (duration / 16);
-                let current = 0;
-                
-                const timer = setInterval(() => {
-                    current += step;
-                    if (current >= target) {
-                        current = target;
-                        clearInterval(timer);
-                    }
-                    counter.textContent = Math.floor(current).toLocaleString();
-                }, 16);
-            });
-        }
+      const avgHistorical = historicalData.reduce((a, b) => a + b, 0) / historicalData.length;
+      const trend = ((historicalData[historicalData.length - 1] - historicalData[0]) / historicalData.length) * 100 / avgHistorical;
+      
+      let multiplier = 1 + trend / 100;
+      if (promotion) multiplier *= 1.15;
+      if (seasonal) multiplier *= 1.25;
+      if (external) multiplier *= 0.92;
 
-        // Initialize charts with light theme
-        function initializeCharts() {
-            // Demand Forecast Chart
-            const demandCtx = document.getElementById('demandChart').getContext('2d');
-            new Chart(demandCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-                    datasets: [{
-                        label: 'Actual Demand',
-                        data: [1200, 1900, 1500, 2100, 1800, 2400, 2200, 2600],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 4,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#3b82f6',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }, {
-                        label: 'AI Prediction',
-                        data: [1100, 1850, 1600, 2050, 1900, 2350, 2300, 2550],
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 3,
-                        borderDash: [10, 5],
-                        fill: false,
-                        tension: 0.4,
-                        pointBackgroundColor: '#8b5cf6',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            labels: { 
-                                color: '#1e293b',
-                                font: { size: 14, weight: 'bold' }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            ticks: { color: '#64748b', font: { weight: 'bold' } }, 
-                            grid: { color: 'rgba(148, 163, 184, 0.2)' } 
-                        },
-                        y: { 
-                            ticks: { color: '#64748b', font: { weight: 'bold' } }, 
-                            grid: { color: 'rgba(148, 163, 184, 0.2)' } 
-                        }
-                    }
-                }
-            });
+      const expectedDemand = Math.round(avgHistorical * multiplier);
+      const confidenceRange = (100 - confidenceLevel) / 100;
+      const bestCase = Math.round(expectedDemand * (1 + confidenceRange * 0.8));
+      const worstCase = Math.round(expectedDemand * (1 - confidenceRange * 0.6));
 
-            // Inventory Levels Chart
-            const inventoryCtx = document.getElementById('inventoryChart').getContext('2d');
-            new Chart(inventoryCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Beauty'],
-                    datasets: [{
-                        label: 'Current Stock',
-                        data: [450, 320, 280, 190, 150, 220],
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }, {
-                        label: 'Optimal Level',
-                        data: [500, 350, 300, 200, 180, 250],
-                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                        borderColor: '#8b5cf6',
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            labels: { 
-                                color: '#1e293b',
-                                font: { size: 14, weight: 'bold' }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            ticks: { color: '#64748b', font: { weight: 'bold' } }, 
-                            grid: { color: 'rgba(148, 163, 184, 0.2)' } 
-                        },
-                        y: { 
-                            ticks: { color: '#64748b', font: { weight: 'bold' } }, 
-                            grid: { color: 'rgba(148, 163, 184, 0.2)' } 
-                        }
-                    }
-                }
-            });
+      const weights = {
+        arima: 20 + Math.random() * 15,
+        prophet: 20 + Math.random() * 15,
+        xgboost: 20 + Math.random() * 15,
+        lstm: 20 + Math.random() * 15
+      };
+      const totalWeight = weights.arima + weights.prophet + weights.xgboost + weights.lstm;
+      Object.keys(weights).forEach(k => weights[k] = (weights[k] / totalWeight * 100).toFixed(1));
 
-            // Category Distribution Chart
-            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-            new Chart(categoryCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Beauty'],
-                    datasets: [{
-                        data: [35, 25, 20, 12, 8, 15],
-                        backgroundColor: [
-                            '#3b82f6',
-                            '#8b5cf6',
-                            '#06b6d4',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444'
-                        ],
-                        borderWidth: 3,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            labels: { 
-                                color: '#1e293b',
-                                font: { size: 14, weight: 'bold' }
-                            }
-                        }
-                    }
-                }
-            });
+      const rmse = (Math.random() * 30 + 15).toFixed(2);
+      const mape = (Math.random() * 8 + 3).toFixed(2);
+      const r2 = (Math.random() * 0.1 + 0.88).toFixed(3);
 
-            // Model Performance Chart
-            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-            new Chart(performanceCtx, {
-                type: 'radar',
-                data: {
-                    labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'Speed', 'Reliability'],
-                    datasets: [{
-                        label: 'AURA AI Model',
-                        data: [97, 94, 91, 93, 88, 96],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#3b82f6',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            labels: { 
-                                color: '#1e293b',
-                                font: { size: 14, weight: 'bold' }
-                            }
-                        }
-                    },
-                    scales: {
-                        r: {
-                            ticks: { 
-                                color: '#64748b',
-                                font: { weight: 'bold' },
-                                backdropColor: 'transparent'
-                            },
-                            grid: { color: 'rgba(148, 163, 184, 0.3)' },
-                            pointLabels: { 
-                                color: '#1e293b',
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            min: 0,
-                            max: 100
-                        }
-                    }
-                }
-            });
-        }
+      const stockoutRisk = expectedDemand > avgHistorical * 1.3 ? (Math.random() * 30 + 40).toFixed(0) : (Math.random() * 20 + 5).toFixed(0);
+      const overstockRisk = expectedDemand < avgHistorical * 0.8 ? (Math.random() * 30 + 40).toFixed(0) : (Math.random() * 20 + 10).toFixed(0);
 
-        // Chat functionality
-        function toggleChat() {
-            const chatPanel = document.getElementById('chatPanel');
-            chatPanel.style.display = chatPanel.style.display === 'flex' ? 'none' : 'flex';
-        }
+      currentPredictionData = {
+        expected: expectedDemand,
+        best: bestCase,
+        worst: worstCase,
+        weights,
+        rmse,
+        mape,
+        r2,
+        stockoutRisk,
+        overstockRisk,
+        avgHistorical,
+        trend,
+        timeHorizon,
+        promotion,
+        seasonal,
+        external
+      };
 
-        function handleChatInput(event) {
-            if (event.key === 'Enter') {
-                const input = event.target;
-                const message = input.value.trim();
-                if (message) {
-                    addChatMessage('user', message);
-                    input.value = '';
-                    
-                    // Show typing indicator
-                    addTypingIndicator();
-                    
-                    // Simulate AI response
-                    setTimeout(() => {
-                        removeTypingIndicator();
-                        const responses = [
-                            "Based on current trends, I predict a 22% increase in electronics demand next month. Consider increasing stock levels by 15%.",
-                            "Your inventory optimization score is 94%! I recommend reducing sports equipment by 8% and increasing beauty products by 12%.",
-                            "I've detected an unusual spike in home & garden sales. This could be seasonal - shall I analyze the pattern deeper?",
-                            "Critical alert: Electronics category will need restocking in 4 days. Auto-reorder has been suggested for 3 products.",
-                            "Your AI model accuracy improved to 97.2% this week! The new feature engineering is working excellently.",
-                            "Demand forecasting shows strong growth in clothing category. Consider expanding your supplier network.",
-                            "Beauty products are trending upward. I recommend adding 5 new SKUs based on market analysis."
-                        ];
-                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                        addChatMessage('ai', randomResponse);
-                    }, 1500);
-                }
-            }
-        }
+      displayResults();
+    }
 
-        function addChatMessage(sender, message) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.style.cssText = `
-                margin-bottom: 1.5rem;
-                padding: 1rem;
-                border-radius: 15px;
-                animation: messageSlide 0.3s ease;
-                ${sender === 'user' ? 
-                    'background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1)); margin-left: 2rem; text-align: right;' : 
-                    'background: rgba(248, 250, 252, 0.8); margin-right: 2rem; border-left: 3px solid #3b82f6;'
-                }
-            `;
-            messageDiv.innerHTML = `
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; font-weight: bold;">
-                    ${sender === 'user' ? 'You' : 'AURA AI'}
-                </div>
-                <div style="line-height: 1.6; color: #1e293b;">${message}</div>
-            `;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+    function displayResults() {
+      const data = currentPredictionData;
+      
+      document.getElementById('processingPanel').classList.add('hidden');
+      document.getElementById('resultsPanel').classList.remove('hidden');
 
-        function addTypingIndicator() {
-            const messagesContainer = document.getElementById('chatMessages');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'typing-indicator';
-            typingDiv.style.cssText = `
-                margin-bottom: 1.5rem;
-                padding: 1rem;
-                border-radius: 15px;
-                background: rgba(248, 250, 252, 0.8);
-                margin-right: 2rem;
-                border-left: 3px solid #3b82f6;
-            `;
-            typingDiv.innerHTML = `
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; font-weight: bold;">
-                    AURA AI
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #1e293b;">
-                    <div class="loading"></div>
-                    <span>Analyzing your request...</span>
-                </div>
-            `;
-            messagesContainer.appendChild(typingDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+      document.getElementById('expectedCase').textContent = data.expected;
+      document.getElementById('bestCase').textContent = data.best;
+      document.getElementById('worstCase').textContent = data.worst;
 
-        function removeTypingIndicator() {
-            const typingIndicator = document.getElementById('typing-indicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-        }
+      document.getElementById('arimaWeight').style.width = data.weights.arima + '%';
+      document.getElementById('arimaWeight').textContent = `ARIMA ${data.weights.arima}%`;
+      document.getElementById('prophetWeight').style.width = data.weights.prophet + '%';
+      document.getElementById('prophetWeight').textContent = `Prophet ${data.weights.prophet}%`;
+      document.getElementById('xgboostWeight').style.width = data.weights.xgboost + '%';
+      document.getElementById('xgboostWeight').textContent = `XGBoost ${data.weights.xgboost}%`;
+      document.getElementById('lstmWeight').style.width = data.weights.lstm + '%';
+      document.getElementById('lstmWeight').textContent = `LSTM ${data.weights.lstm}%`;
 
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
+      document.getElementById('rmseValue').textContent = data.rmse;
+      document.getElementById('rmseBar').style.width = Math.min(100, (50 - parseFloat(data.rmse)) * 2) + '%';
+      document.getElementById('mapeValue').textContent = data.mape + '%';
+      document.getElementById('mapeBar').style.width = Math.min(100, (20 - parseFloat(data.mape)) * 5) + '%';
+      document.getElementById('r2Value').textContent = data.r2;
+      document.getElementById('r2Bar').style.width = parseFloat(data.r2) * 100 + '%';
 
-        // Scroll animations
-        function handleScrollAnimations() {
-            const elements = document.querySelectorAll('.fade-in');
-            
-            elements.forEach(element => {
-                const elementTop = element.getBoundingClientRect().top;
-                const elementVisible = 150;
-                
-                if (elementTop < window.innerHeight - elementVisible) {
-                    element.classList.add('visible');
-                }
-            });
-        }
+      const modelHealth = document.getElementById('modelHealth');
+      if (parseFloat(data.mape) < 5 && parseFloat(data.r2) > 0.9) {
+        modelHealth.textContent = '🟢 STABLE';
+        modelHealth.className = 'px-4 py-2 rounded-lg font-bold text-sm bg-green-500 bg-opacity-30 border-2 border-green-400';
+      } else if (parseFloat(data.mape) < 10) {
+        modelHealth.textContent = '🟡 ADAPTING';
+        modelHealth.className = 'px-4 py-2 rounded-lg font-bold text-sm bg-yellow-500 bg-opacity-30 border-2 border-yellow-400';
+      } else {
+        modelHealth.textContent = '��� RETRAINING';
+        modelHealth.className = 'px-4 py-2 rounded-lg font-bold text-sm bg-red-500 bg-opacity-30 border-2 border-red-400';
+      }
 
-        // Header scroll effect
-        function handleHeaderScroll() {
-            const header = document.querySelector('.header');
-            if (window.scrollY > 100) {
-                header.style.background = 'rgba(255, 255, 255, 0.98)';
-                header.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
-            } else {
-                header.style.background = 'rgba(255, 255, 255, 0.95)';
-                header.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.05)';
-            }
-        }
+      if (Math.abs(data.expected - data.avgHistorical) / data.avgHistorical > 0.15) {
+        document.getElementById('driftAlert').classList.remove('hidden');
+      } else {
+        document.getElementById('driftAlert').classList.add('hidden');
+      }
 
-        // Mobile menu functionality
-        function toggleMobileMenu() {
-            const navMenu = document.querySelector('.nav-menu');
-            const toggleButton = document.querySelector('.mobile-menu-toggle');
-            
-            navMenu.classList.toggle('active');
-            
-            // Update toggle button icon
-            const icon = toggleButton.querySelector('i');
-            if (navMenu.classList.contains('active')) {
-                icon.className = 'fas fa-times';
-            } else {
-                icon.className = 'fas fa-bars';
-            }
-        }
+      const recommendations = [];
+      const optimalStock = Math.round(data.expected * 1.2);
+      const reorderPoint = Math.round(data.expected * 0.7);
 
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const navMenu = document.querySelector('.nav-menu');
-            const toggleButton = document.querySelector('.mobile-menu-toggle');
-            const navContainer = document.querySelector('.nav-container');
-            
-            if (!navContainer.contains(event.target) && navMenu.classList.contains('active')) {
-                navMenu.classList.remove('active');
-                toggleButton.querySelector('i').className = 'fas fa-bars';
-            }
-        });
+      if (data.expected > data.avgHistorical * 1.2) {
+        recommendations.push({ icon: '📈', action: `Increase inventory to ${optimalStock} units`, reason: 'Demand surge predicted', priority: 'high' });
+        recommendations.push({ icon: '⚡', action: `Set reorder point at ${reorderPoint} units`, reason: 'Prevent stockouts', priority: 'high' });
+      } else if (data.expected < data.avgHistorical * 0.8) {
+        recommendations.push({ icon: '����', action: `Reduce stock to ${optimalStock} units`, reason: 'Demand decline predicted', priority: 'medium' });
+        recommendations.push({ icon: '💰', action: 'Review promotional strategy', reason: 'Optimize for lower demand', priority: 'medium' });
+      } else {
+        recommendations.push({ icon: '✅', action: `Maintain inventory at ${optimalStock} units`, reason: 'Stable demand expected', priority: 'low' });
+        recommendations.push({ icon: '🔄', action: 'Continue regular monitoring', reason: 'No major changes needed', priority: 'low' });
+      }
 
-        // Initialize everything
-        document.addEventListener('DOMContentLoaded', function() {
-            createTechElements();
-            initializeBackgroundSlideshow();
-            
-            // Mobile menu toggle
-            const mobileToggle = document.querySelector('.mobile-menu-toggle');
-            if (mobileToggle) {
-                mobileToggle.addEventListener('click', toggleMobileMenu);
-            }
-            
-            // Delay counter animation for better effect
-            setTimeout(() => {
-                animateCounters();
-            }, 500);
-            
-            initializeCharts();
-            handleScrollAnimations();
-        });
-
-        // Event listeners
-        window.addEventListener('scroll', () => {
-            handleScrollAnimations();
-            handleHeaderScroll();
-        });
-
-        // Add CSS animation for messages
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes messageSlide {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
+      const recHtml = recommendations.map(rec => {
+        const bgColor = rec.priority === 'high' ? 'bg-red-500' : rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500';
+        return `
+          <div class="flex items-start gap-3 p-3 bg-white bg-opacity-5 rounded-lg border-l-4 border-${rec.priority === 'high' ? 'red' : rec.priority === 'medium' ? 'yellow' : 'green'}-400">
+            <div class="text-2xl">${rec.icon}</div>
+            <div class="flex-1">
+              <p class="font-bold text-white mb-1">${rec.action}</p>
+              <p class="text-sm opacity-90">${rec.reason}</p>
+            </div>
+            <div class="px-2 py-1 rounded text-xs font-bold ${bgColor} bg-opacity-30">${rec.priority.toUpperCase()}</div>
+          </div>
         `;
-        document.head.appendChild(style);
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975544f36108c183',t:'MTc1NjIzMTY1Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+      }).join('');
+      document.getElementById('recommendations').innerHTML = recHtml;
+
+      document.getElementById('stockoutProbability').textContent = data.stockoutRisk + '%';
+      document.getElementById('stockoutBar').style.width = data.stockoutRisk + '%';
+      const stockoutDiv = document.getElementById('stockoutRisk');
+      stockoutDiv.className = `p-4 rounded-lg border-2 ${data.stockoutRisk > 30 ? 'border-red-400 bg-red-500 bg-opacity-20' : 'border-gray-400 bg-gray-500 bg-opacity-10'}`;
+
+      document.getElementById('overstockProbability').textContent = data.overstockRisk + '%';
+      document.getElementById('overstockBar').style.width = data.overstockRisk + '%';
+      const overstockDiv = document.getElementById('overstockRisk');
+      overstockDiv.className = `p-4 rounded-lg border-2 ${data.overstockRisk > 30 ? 'border-orange-400 bg-orange-500 bg-opacity-20' : 'border-gray-400 bg-gray-500 bg-opacity-10'}`;
+
+      const contextFactors = [];
+      if (data.promotion) contextFactors.push('active promotional campaign (+15% demand)');
+      if (data.seasonal) contextFactors.push('seasonal peak period (+25% demand)');
+      if (data.external) contextFactors.push('external market event (-8% demand)');
+
+      const explanationHtml = `
+        <p class="mb-4">
+          Based on ${data.timeHorizon} days of forecasting, AURA's ensemble predicts an expected daily demand of 
+          <strong>${data.expected} units</strong>, representing a ${data.trend >= 0 ? 'growth' : 'decline'} of 
+          <strong>${Math.abs(data.trend).toFixed(1)}%</strong> from historical averages.
+        </p>
+        ${contextFactors.length > 0 ? `<p class="mb-4">Context adjustments applied: ${contextFactors.join(', ')}.</p>` : ''}
+        <p>
+          The prediction leverages ${data.weights.lstm > 30 ? 'deep learning patterns' : data.weights.xgboost > 30 ? 'gradient boosting patterns' : 'time series analysis'} 
+          as the primary forecasting driver, achieving ${parseFloat(data.r2) * 100}% variance explanation (R² score).
+        </p>
+      `;
+      document.getElementById('explanationText').innerHTML = explanationHtml;
+
+      const drivers = [
+        { name: 'Historical Trend', impact: Math.abs(data.trend) > 5 ? 'High' : 'Medium', direction: data.trend >= 0 ? '↗️' : '↘️' },
+        { name: 'Seasonality Pattern', impact: data.seasonal ? 'High' : 'Low', direction: data.seasonal ? '📈' : '➖' },
+        { name: 'Promotional Activity', impact: data.promotion ? 'High' : 'None', direction: data.promotion ? '🎯' : '—' },
+        { name: 'External Factors', impact: data.external ? 'Medium' : 'None', direction: data.external ? '⚡' : '—' }
+      ];
+
+      const driversHtml = drivers.map(d => `
+        <div class="flex justify-between items-center p-2 bg-white bg-opacity-5 rounded">
+          <span>${d.direction} ${d.name}</span>
+          <span class="font-bold ${d.impact === 'High' ? 'text-red-300' : d.impact === 'Medium' ? 'text-yellow-300' : 'text-gray-400'}">${d.impact}</span>
+        </div>
+      `).join('');
+      document.getElementById('keyDrivers').innerHTML = driversHtml;
+
+      document.getElementById('historicalAvg').textContent = Math.round(data.avgHistorical);
+      const changePercent = ((data.expected - data.avgHistorical) / data.avgHistorical * 100).toFixed(1);
+      const changeColor = changePercent > 0 ? 'text-green-300' : changePercent < 0 ? 'text-red-300' : '';
+      document.getElementById('predictedChange').innerHTML = `<span class="${changeColor}">${changePercent > 0 ? '+' : ''}${changePercent}%</span>`;
+
+      document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // What-If Simulator
+    const demandAdjust = document.getElementById('demandAdjust');
+    const demandAdjustValue = document.getElementById('demandAdjustValue');
+
+    demandAdjust.addEventListener('input', (e) => {
+      demandAdjustValue.textContent = e.target.value + '%';
+    });
+
+    document.getElementById('runSimulation').addEventListener('click', () => {
+      if (!currentPredictionData) return;
+
+      const adjustment = parseInt(demandAdjust.value);
+      const newExpected = Math.round(currentPredictionData.expected * (1 + adjustment / 100));
+      const newOptimal = Math.round(newExpected * 1.2);
+      const newReorder = Math.round(newExpected * 0.7);
+
+      const resultHtml = `
+        <p class="mb-2"><strong>Simulated Scenario:</strong> ${adjustment > 0 ? 'Demand increase' : adjustment < 0 ? 'Demand decrease' : 'No change'} of ${Math.abs(adjustment)}%</p>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p class="text-xs opacity-75">New Expected</p>
+            <p class="text-lg font-bold">${newExpected}</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-75">Optimal Stock</p>
+            <p class="text-lg font-bold">${newOptimal}</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-75">Reorder Point</p>
+            <p class="text-lg font-bold">${newReorder}</p>
+          </div>
+        </div>
+      `;
+      document.getElementById('simulationResult').innerHTML = resultHtml;
+      document.getElementById('simulationResult').classList.remove('hidden');
+    });
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function onConfigChange(config) {
+      document.querySelectorAll('.aura-title').forEach(el => {
+        el.textContent = config.site_title || defaultConfig.site_title;
+      });
+
+      document.querySelectorAll('nav .text-2xl').forEach(el => {
+        el.textContent = config.site_title || defaultConfig.site_title;
+      });
+
+      const taglineElements = document.querySelectorAll('#page-home .aura-tagline');
+      if (taglineElements.length > 0) {
+        const words = (config.tagline || defaultConfig.tagline).split(' ');
+        taglineElements[0].innerHTML = words.map(word => `<span>${word}</span>`).join(' ');
+      }
+
+      const introHeadings = document.querySelectorAll('#page-home .card-3d h2');
+      if (introHeadings.length > 0) {
+        introHeadings[0].textContent = config.intro_heading || defaultConfig.intro_heading;
+      }
+
+      const introTexts = document.querySelectorAll('#page-home .card-3d > p');
+      if (introTexts.length > 0) {
+        introTexts[0].textContent = config.intro_text || defaultConfig.intro_text;
+      }
+
+      const approachTitles = document.querySelectorAll('#page-approach h1');
+      if (approachTitles.length > 0) {
+        approachTitles[0].textContent = config.approach_title || defaultConfig.approach_title;
+      }
+
+      const futureTitles = document.querySelectorAll('#page-future h1');
+      if (futureTitles.length > 0) {
+        futureTitles[0].textContent = config.future_title || defaultConfig.future_title;
+      }
+
+      const teamTitles = document.querySelectorAll('#page-team h1');
+      if (teamTitles.length > 0) {
+        teamTitles[0].textContent = config.team_title || defaultConfig.team_title;
+      }
+
+      const predictTitles = document.querySelectorAll('#page-predict h1');
+      if (predictTitles.length > 0) {
+        predictTitles[0].textContent = config.predict_title || defaultConfig.predict_title;
+      }
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["site_title", config.site_title || defaultConfig.site_title],
+          ["tagline", config.tagline || defaultConfig.tagline],
+          ["intro_heading", config.intro_heading || defaultConfig.intro_heading],
+          ["intro_text", config.intro_text || defaultConfig.intro_text],
+          ["approach_title", config.approach_title || defaultConfig.approach_title],
+          ["future_title", config.future_title || defaultConfig.future_title],
+          ["team_title", config.team_title || defaultConfig.team_title],
+          ["predict_title", config.predict_title || defaultConfig.predict_title]
+        ])
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b0c265581947f8b',t:'MTc2NjIwMjM1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
