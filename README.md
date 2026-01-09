@@ -1,6 +1,9 @@
 # AURA: Autonomous Unified Resilient Analytics  
 ### Intelligent Demand Forecasting & Inventory Optimization System
 
+
+View link : https://syednadeem2205.github.io/AURA/
+
 ---
 
 ## 📌 Project Overview
