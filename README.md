@@ -135,18 +135,13 @@ The web app acts as a **conceptual front-end** to demonstrate real-time forecast
 
 **Syed Nadeem Ahmed**  
 *Project Lead & System Architect*  
-B.E. Artificial Intelligence & Machine Learning  
-Visvesvaraya Technological University (VTU)
+B.E. Artificial Intelligence & Machine Learning, BGSCET, Visvesvaraya Technological University (VTU)
 
-**Karthik G**  
-*Documentation, Reporting & Presentation Lead*  
-B.E. Artificial Intelligence & Machine Learning  
-Visvesvaraya Technological University (VTU)
+**Karthik G**   
+B.E. Artificial Intelligence & Machine Learning, BGSCET, Visvesvaraya Technological University (VTU)
 
-**M R Siddarth**  
-*Conceptual Analysis & System Design Support*  
-B.E. Artificial Intelligence & Machine Learning  
-Visvesvaraya Technological University (VTU)
+**M R Siddarth**   
+B.E. Artificial Intelligence & Machine Learning, BGSCET, Visvesvaraya Technological University (VTU)
 
 ---
 
